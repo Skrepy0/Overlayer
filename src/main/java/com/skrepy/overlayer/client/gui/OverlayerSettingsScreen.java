@@ -1,10 +1,10 @@
 package com.skrepy.overlayer.client.gui;
 
+import static com.skrepy.overlayer.manager.OverlayerManager.selectFile;
+
 import java.util.List;
 
-import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
-import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import com.skrepy.overlayer.Overlayer;
 import com.skrepy.overlayer.client.gui.components.ImageList;
@@ -23,10 +23,10 @@ import net.neoforged.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class OverlayerSettingsScreen extends Screen {
-    private static final Component TITLE = Component.literal("Overlayer");
+    private static final Component TITLE = Component.translatable("overlayer.screen.settings_page.title");
     private static final Component DONE = CommonComponents.GUI_DONE;
-    private static final Component ADD = Component.literal("Add");
-    private static final Component CLEAR = Component.literal("清空列表");
+    private static final Component ADD = Component.translatable("overlayer.screen.settings_page.button.add");
+    private static final Component CLEAR = Component.translatable("overlayer.screen.settings_page.button.clear");
     private static final int LIST_ENTRY_HEIGHT = 40;
     private static final int BUTTON_WIDTH = 100;
     private static final int BUTTON_HEIGHT = 20;
@@ -96,11 +96,13 @@ public class OverlayerSettingsScreen extends Screen {
     }
 
     private void openEditScreen(ImageEntry entry) {
-        this.minecraft.setScreen(new ImageEditScreen(this, entry, (edited) -> {
-            // 编辑后刷新列表并保存
-            this.list.updateEntries(this.imageEntries);
-            manager.save();
-        }));
+        if (this.minecraft != null) {
+            this.minecraft.setScreen(new ImageEditScreen(this, entry, (edited) -> {
+                // 编辑后刷新列表并保存
+                this.list.updateEntries(this.imageEntries);
+                manager.save();
+            }));
+        }
     }
 
     @Override
@@ -137,23 +139,19 @@ public class OverlayerSettingsScreen extends Screen {
 
     @Override
     public void onClose() {
-        this.minecraft.setScreen(this.lastScreen);
+        if (this.minecraft != null) {
+            this.minecraft.setScreen(this.lastScreen);
+        }
+    }
+
+    @Override
+    public boolean isPauseScreen() {
+        return true;
     }
 
     private void openFileChooser() {
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            PointerBuffer filterPatterns = stack.mallocPointer(5);
-            filterPatterns.put(stack.UTF8("*.png"));
-            filterPatterns.put(stack.UTF8("*.jpg"));
-            filterPatterns.put(stack.UTF8("*.jpeg"));
-            filterPatterns.put(stack.UTF8("*.bmp"));
-            filterPatterns.put(stack.UTF8("*.gif"));
-            filterPatterns.flip();
-
-            String result = TinyFileDialogs.tinyfd_openFileDialog(
-                    "选择图片文件", null, filterPatterns, null, false
-            );
-
+            String result = selectFile(stack);
             if (result != null) {
                 this.pathInput.setValue(result);
             }
@@ -189,7 +187,7 @@ public class OverlayerSettingsScreen extends Screen {
                             manager.save();
                         }
                         this.minecraft.setScreen(this);
-                    }, Component.literal("确认删除"), Component.literal("确定要删除这个图片实例吗？"), Component.literal("删除"), CommonComponents.GUI_CANCEL
+                    }, Component.translatable("overlayer.screen.delete_confirm.title"), Component.translatable("overlayer.screen.delete_confirm.meg"), Component.translatable("overlayer.screen.common.delete"), CommonComponents.GUI_CANCEL
             ));
         }
     }
@@ -207,7 +205,7 @@ public class OverlayerSettingsScreen extends Screen {
                             manager.save();
                         }
                         this.minecraft.setScreen(this);
-                    }, Component.literal("确认清空"), Component.literal("确定要清空所有图片实例吗？此操作不可撤销！"), Component.literal("清空"), CommonComponents.GUI_CANCEL
+                    }, Component.translatable("overlayer.screen.delete_all_confirm.title"), Component.translatable("overlayer.screen.delete_all_confirm.meg"), Component.translatable("overlayer.screen.common.delete_all"), CommonComponents.GUI_CANCEL
             ));
         }
     }

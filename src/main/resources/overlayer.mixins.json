@@ -10,8 +10,9 @@
     "requireAnnotations": true
   },
   "client": [
-    "ScreenMixin",
+    "GuiMixin",
     "OptionsScreenMixin",
+    "ScreenMixin",
     "TitleScreenMixin"
   ]
 }

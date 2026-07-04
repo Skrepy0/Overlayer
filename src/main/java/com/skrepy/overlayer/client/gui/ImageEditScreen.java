@@ -1,11 +1,20 @@
 package com.skrepy.overlayer.client.gui;
 
+import static com.skrepy.overlayer.manager.OverlayerManager.selectFile;
+
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.function.Consumer;
 
-import org.lwjgl.PointerBuffer;
+import javax.imageio.ImageIO;
+
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.system.MemoryStack;
-import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import com.skrepy.overlayer.Overlayer;
 import com.skrepy.overlayer.data.ImageEntry;
@@ -17,20 +26,23 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.client.gui.widget.ExtendedSlider;
 
 @OnlyIn(Dist.CLIENT)
 public class ImageEditScreen extends Screen {
-    private static final Component TITLE = Component.literal("编辑图片实例");
-    private static final Component SAVE = Component.literal("保存");
-    private static final Component CANCEL = Component.literal("取消");
+    private static final Component TITLE = Component.translatable("overlayer.screen.image_edit.title");
+    private static final Component SAVE = Component.translatable("overlayer.screen.common.save");
+    private static final Component CANCEL = Component.translatable("overlayer.screen.common.cancel");
 
     private final Screen lastScreen;
     private final ImageEntry entry;
     private final Consumer<ImageEntry> onSave;
 
+    // 右侧控件
     private EditBox pathInput;
     private Button browseButton;
     private ExtendedSlider xSlider;
@@ -43,12 +55,17 @@ public class ImageEditScreen extends Screen {
     private Button cancelButton;
 
     private int modeIndex = 0;
-    private static final String[] MODES = {"总是", "仅游戏中", "仅非游戏中", "禁用"};
+    private static final MutableComponent[] MODES = {Component.translatable("overlayer.screen.image_edit.button.mode.always"), Component.translatable("overlayer.screen.image_edit.button.mode.ingame"), Component.translatable("overlayer.screen.image_edit.button.mode.not_ingame"), Component.translatable("overlayer.screen.image_edit.button.mode.disable")};
     private static final String[] MODE_VALUES = {"always", "ingame", "not_ingame", "disabled"};
 
-    private int previewSize = 64;
-    private int previewX;
-    private int previewY;
+    // 预览相关
+    private int previewSize = 150;
+    private int previewX, previewY;
+
+    // 缓存预览图片尺寸和文件状态
+    private String currentPreviewPath = null;
+    private Dimension currentPreviewDimension = null;
+    private boolean previewFileExists = true;   // 标记文件是否存在，避免反复尝试
 
     private final DecimalFormat df = new DecimalFormat("0.00");
 
@@ -70,125 +87,168 @@ public class ImageEditScreen extends Screen {
     protected void init() {
         super.init();
 
-        int centerX = this.width / 2;
-        int startY = 30;
+        int screenWidth = this.width;
+        int screenHeight = this.height;
+
+        // ---- 左右分栏布局 ----
+        int leftWidth = (int) (screenWidth * 0.45);
+        int rightWidth = screenWidth - leftWidth - 20;
+        if (rightWidth < 200) {
+            leftWidth = screenWidth - 220;
+            rightWidth = 200;
+        }
+        if (leftWidth < 80) {
+            leftWidth = 80;
+            rightWidth = screenWidth - leftWidth - 20;
+        }
+
+        int leftStartX = 10;
+        int rightStartX = leftStartX + leftWidth + 20;
 
         // 标题
+        int titleY = 10;
         StringWidget titleWidget = new StringWidget(TITLE, this.font);
-        titleWidget.setX(centerX - this.font.width(TITLE) / 2);
-        titleWidget.setY(10);
+        titleWidget.setX((screenWidth - this.font.width(TITLE)) / 2);
+        titleWidget.setY(titleY);
         this.addRenderableWidget(titleWidget);
 
-        // 预览
-        previewX = centerX - previewSize / 2;
-        previewY = startY;
+        // ---- 预览 ----
+        int previewMaxSize = Math.min(leftWidth - 20, screenHeight - 70);
+        previewSize = Math.max(80, Math.min(300, previewMaxSize));
+        previewX = leftStartX + (leftWidth - previewSize) / 2;
+        previewY = (screenHeight - previewSize) / 2;
+        if (previewY < 30) previewY = 30;
 
-        // 路径输入
-        int inputY = previewY + previewSize + 10;
-        this.pathInput = new EditBox(this.font, centerX - 110, inputY, 200, 20, Component.literal("图片路径"));
-        this.pathInput.setValue(entry.getPath());
+        // ---- 右栏控件 ----
+        int startY = 30;
+        int rightMargin = 30;
+        int spacing = 6;
+
+        // 1) 路径输入 + 浏览按钮
+        int pathWidth = rightWidth - 30 - 54;
+        this.pathInput = new EditBox(this.font, rightStartX + rightMargin, startY, pathWidth, 20, Component.literal("图片路径"));
         this.pathInput.setMaxLength(Integer.MAX_VALUE);
+        this.pathInput.setValue(entry.getPath());
         this.addRenderableWidget(this.pathInput);
 
-        this.browseButton = Button.builder(Component.literal("..."), (btn) -> this.openFileChooser()).pos(centerX + 95, inputY).size(20, 20).build();
+        this.browseButton = Button.builder(Component.literal("..."), (btn) -> this.openFileChooser()).pos(rightStartX + rightMargin + pathWidth + 4, startY).size(20, 20).build();
         this.addRenderableWidget(this.browseButton);
 
-        // --- 滑动条区域 ---
-        int sliderY = inputY + 30;
-        int sliderWidth = 200;
-        int sliderHeight = 20;
-        int spacing = 4;
+        // 2) 滑块
+        int sliderY = startY + 28;
+        int sliderWidth = rightWidth - 2 * rightMargin;
 
-        // X 偏移
-        this.xSlider = new XSlider(centerX - sliderWidth / 2, sliderY, sliderWidth, sliderHeight, Component.literal("X: "), Component.literal(" %"), -200, 200, entry.getXOffset(), 1, 0, true);
+        this.xSlider = new XSlider(rightStartX + rightMargin, sliderY, sliderWidth, 20, Component.literal("X: "), Component.literal(" %"), -200, 200, entry.getXOffset(), 1, 0, true);
         this.addRenderableWidget(this.xSlider);
 
-        // Y 偏移
-        sliderY += sliderHeight + spacing;
-        this.ySlider = new YSlider(centerX - sliderWidth / 2, sliderY, sliderWidth, sliderHeight, Component.literal("Y: "), Component.literal(" %"), -200, 200, entry.getYOffset(), 1, 0, true);
+        sliderY += 20 + spacing;
+        this.ySlider = new YSlider(rightStartX + rightMargin, sliderY, sliderWidth, 20, Component.literal("Y: "), Component.literal(" %"), -200, 200, entry.getYOffset(), 1, 0, true);
         this.addRenderableWidget(this.ySlider);
 
-        // 缩放
-        sliderY += sliderHeight + spacing;
-        this.scaleSlider = new ScaleSlider(centerX - sliderWidth / 2, sliderY, sliderWidth, sliderHeight, Component.literal("缩放: "), Component.literal(""), 1, 300, (int) (entry.getScale() * 100), 1, 0, false);
+        sliderY += 20 + spacing;
+        this.scaleSlider = new ScaleSlider(rightStartX + rightMargin, sliderY, sliderWidth, 20, Component.literal("缩放: "), Component.literal(""), 1, 300, (int) (entry.getScale() * 100), 1, 0, false);
         this.addRenderableWidget(this.scaleSlider);
 
-        // 透明度
-        sliderY += sliderHeight + spacing;
-        this.alphaSlider = new AlphaSlider(centerX - sliderWidth / 2, sliderY, sliderWidth, sliderHeight, Component.literal("透明度: "), Component.literal(""), 1, 100, (int) (entry.getAlpha() * 100), 1, 0, false);
+        sliderY += 20 + spacing;
+        this.alphaSlider = new AlphaSlider(rightStartX + rightMargin, sliderY, sliderWidth, 20, Component.literal("透明度: "), Component.literal(""), 1, 100, (int) (entry.getAlpha() * 100), 1, 0, false);
         this.addRenderableWidget(this.alphaSlider);
 
-        // 图层优先级（数字输入框 + 标签）
-        sliderY += sliderHeight + spacing + 4;
-        StringWidget layerLabel = new StringWidget(Component.literal("图层:"), this.font);
-        layerLabel.setX(centerX - 50 - this.font.width("图层:"));
+        // 3) 图层标签
+        sliderY += 20 + spacing + 4;
+        int rowWidth = sliderWidth;
+        StringWidget layerLabel = new StringWidget(Component.translatable("overlayer.screen.image_edit.label.layer"), this.font);
+        layerLabel.setX(rightStartX + rightMargin);
         layerLabel.setY(sliderY + 2);
         this.addRenderableWidget(layerLabel);
 
-        this.layerInput = new EditBox(this.font, centerX - 30, sliderY, 60, 20, Component.literal("图层"));
+        // 4) 图层输入框
+        sliderY += 20 + spacing;
+        this.layerInput = new EditBox(this.font, rightStartX + rightMargin, sliderY, rowWidth, 20, Component.literal("图层"));
         this.layerInput.setValue(String.valueOf(entry.getLayer()));
         this.layerInput.setFilter(s -> s.matches("\\d*"));
         this.layerInput.setMaxLength(6);
         this.addRenderableWidget(this.layerInput);
 
-        // 模式切换按钮
-        int modeY = sliderY + 30;
-        this.modeButton = Button.builder(
-                Component.literal("模式: " + MODES[modeIndex]), (btn) -> this.cycleMode()
-        ).pos(centerX - 60, modeY).size(120, 20).build();
+        // 5) 模式按钮
+        sliderY += 20 + spacing;
+        this.modeButton = Button.builder(Component.translatable("overlayer.screen.image_edit.button.mode").append(MODES[modeIndex]), (btn) -> this.cycleMode()).pos(rightStartX + rightMargin, sliderY).size(rowWidth, 20).build();
         this.addRenderableWidget(this.modeButton);
 
-        // 底部按钮
-        int buttonY = this.height - 30;
-        this.saveButton = Button.builder(SAVE, (btn) -> this.saveAndClose()).pos(centerX - 110, buttonY).size(100, 20).build();
+        // 6) 底部按钮
+        int buttonY = screenHeight - 30;
+        int btnWidth = Math.min(100, (rightWidth - 20) / 2);
+        int btnSpacing = 10;
+        int totalBtnWidth = btnWidth * 2 + btnSpacing;
+        int btnStartX = rightStartX + (rightWidth - totalBtnWidth) / 2;
+
+        this.saveButton = Button.builder(SAVE, (btn) -> this.saveAndClose()).pos(btnStartX, buttonY).size(btnWidth, 20).build();
         this.addRenderableWidget(this.saveButton);
 
-        this.cancelButton = Button.builder(CANCEL, (btn) -> this.cancel()).pos(centerX + 10, buttonY).size(100, 20).build();
+        this.cancelButton = Button.builder(CANCEL, (btn) -> this.cancel()).pos(btnStartX + btnWidth + btnSpacing, buttonY).size(btnWidth, 20).build();
         this.addRenderableWidget(this.cancelButton);
+
+        // 预加载预览尺寸
+        loadPreviewDimension(entry.getPath());
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        // 预览
-        var texture = entry.getOriginalTexture(this.minecraft.getTextureManager());
-        if (texture != null) {
-            // 直接绘制到预览区域，不缩放（或者缩放至 previewSize）
-            // 简单拉伸至 previewSize
-            guiGraphics.blit(texture, previewX, previewY, 0, 0, previewSize, previewSize, previewSize, previewSize);
+        // 检测路径是否变化，若变化则重新加载（即使文件不存在，也会更新缓存状态）
+        String currentPath = this.pathInput.getValue();
+        if (!currentPath.equals(currentPreviewPath)) {
+            loadPreviewDimension(currentPath);
+        }
+
+        // 绘制预览
+        ResourceLocation texture = null;
+        if (this.minecraft != null) {
+            texture = entry.getCurrentFrame(this.minecraft.getTextureManager(), 0);
+        }
+
+        // 如果纹理有效且我们缓存了尺寸，则绘制图片
+        if (texture != null && currentPreviewDimension != null && previewFileExists) {
+            int imgWidth = currentPreviewDimension.width;
+            int imgHeight = currentPreviewDimension.height;
+
+            double scaleX = (double) previewSize / imgWidth;
+            double scaleY = (double) previewSize / imgHeight;
+            double scale = Math.min(scaleX, scaleY);
+            int drawWidth = (int) (imgWidth * scale);
+            int drawHeight = (int) (imgHeight * scale);
+            int drawX = previewX + (previewSize - drawWidth) / 2;
+            int drawY = previewY + (previewSize - drawHeight) / 2;
+
+            guiGraphics.blit(texture, drawX, drawY, 0, 0, drawWidth, drawHeight, drawWidth, drawHeight);
         } else {
+            // 占位符：显示相应提示
             guiGraphics.fill(previewX, previewY, previewX + previewSize, previewY + previewSize, 0xFF888888);
-            guiGraphics.drawString(this.font, "预览", previewX + previewSize / 2 - 10, previewY + previewSize / 2 - 4, 0xFFFFFF);
+            String message;
+            if (currentPreviewPath != null && !previewFileExists) {
+                message = "文件不存在";
+            } else {
+                message = Component.translatable("overlayer.screen.image_edit.label.preview").getString();
+            }
+            guiGraphics.drawString(this.font, message, previewX + previewSize / 2 - this.font.width(message) / 2, previewY + previewSize / 2 - 4, 0xFFFFFF);
         }
     }
 
     private void cycleMode() {
         modeIndex = (modeIndex + 1) % MODES.length;
-        this.modeButton.setMessage(Component.literal("模式: " + MODES[modeIndex]));
-        // 更新 entry 的模式，但保存时才应用，但预览不需要实时更新模式，因为模式不影响预览（编辑时始终显示）
+        this.modeButton.setMessage(Component.translatable("overlayer.screen.image_edit.button.mode").append(MODES[modeIndex]));
         entry.setDisplayMode(MODE_VALUES[modeIndex]);
     }
 
     private void openFileChooser() {
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            PointerBuffer filterPatterns = stack.mallocPointer(5);
-            filterPatterns.put(stack.UTF8("*.png"));
-            filterPatterns.put(stack.UTF8("*.jpg"));
-            filterPatterns.put(stack.UTF8("*.jpeg"));
-            filterPatterns.put(stack.UTF8("*.bmp"));
-            filterPatterns.put(stack.UTF8("*.gif"));
-            filterPatterns.flip();
-
-            String result = TinyFileDialogs.tinyfd_openFileDialog(
-                    "选择图片文件", null, filterPatterns, null, false
-            );
+            String result = selectFile(stack);
             if (result != null) {
                 this.pathInput.setValue(result);
-                // 路径变化，清除缓存并更新预览
                 entry.setPath(result);
                 entry.clearCache();
+                loadPreviewDimension(result);
             }
         }
     }
@@ -204,7 +264,6 @@ public class ImageEditScreen extends Screen {
             entry.clearCache();
         }
 
-        // 收集滑动条值（已经实时更新到 entry，但为确保）
         entry.setXOffset((int) xSlider.getValue());
         entry.setYOffset((int) ySlider.getValue());
         entry.setScale(scaleSlider.getValue() / 100.0);
@@ -218,15 +277,18 @@ public class ImageEditScreen extends Screen {
             entry.setLayer(0);
         }
 
-        // 模式已经在 cycleMode 中更新，但可能未保存，确保设置
         entry.setDisplayMode(MODE_VALUES[modeIndex]);
         OverlayerManager.getInstance().save();
         onSave.accept(entry);
-        this.minecraft.setScreen(lastScreen);
+        if (this.minecraft != null) {
+            this.minecraft.setScreen(lastScreen);
+        }
     }
 
     private void cancel() {
-        this.minecraft.setScreen(lastScreen);
+        if (this.minecraft != null) {
+            this.minecraft.setScreen(lastScreen);
+        }
     }
 
     @Override
@@ -236,10 +298,57 @@ public class ImageEditScreen extends Screen {
 
     @Override
     public boolean isPauseScreen() {
-        return false;
+        return true;
     }
 
-    // ---------- 自定义滑动条内部类 ----------
+    // ---------- 预览尺寸加载（核心改进） ----------
+    private void loadPreviewDimension(String path) {
+        // 1. 空路径处理
+        if (path == null || path.isEmpty()) {
+            currentPreviewPath = null;
+            currentPreviewDimension = null;
+            previewFileExists = false;
+            return;
+        }
+
+        // 2. 如果路径相同且文件已标记为不存在，则直接返回（避免反复报错）
+        if (path.equals(currentPreviewPath) && !previewFileExists) {
+            return;
+        }
+
+        // 3. 使用 Path 检查文件存在性和可读性
+        Path filePath = Paths.get(path);
+        if (!Files.exists(filePath) || !Files.isReadable(filePath)) {
+            // 文件不存在或不可读，更新缓存
+            currentPreviewPath = path;
+            currentPreviewDimension = null;
+            previewFileExists = false;
+            Overlayer.LOGGER.debug("预览文件不存在或不可读: {}", path);
+            return;
+        }
+
+        // 4. 尝试读取图片尺寸
+        try (InputStream is = Files.newInputStream(filePath)) {
+            BufferedImage img = ImageIO.read(is);
+            if (img != null) {
+                currentPreviewDimension = new Dimension(img.getWidth(), img.getHeight());
+                currentPreviewPath = path;
+                previewFileExists = true;
+                Overlayer.LOGGER.debug("成功加载预览图片尺寸: {} x {}", img.getWidth(), img.getHeight());
+            } else {
+                // ImageIO 无法解码，但文件存在
+                currentPreviewDimension = null;
+                previewFileExists = false;
+                Overlayer.LOGGER.warn("无法解码图片文件: {}", path);
+            }
+        } catch (Exception e) {
+            currentPreviewDimension = null;
+            previewFileExists = false;
+            Overlayer.LOGGER.debug("加载预览图片尺寸失败: {}", path, e);
+        }
+    }
+
+    // ---------- 自定义滑动条内部类（保持不变） ----------
     private class XSlider extends ExtendedSlider {
         public XSlider(int x, int y, int width, int height, Component prefix, Component suffix, int minValue, int maxValue, int currentValue, int stepSize, int precision, boolean drawString) {
             super(x, y, width, height, prefix, suffix, minValue, maxValue, currentValue, stepSize, precision, drawString);
@@ -276,7 +385,7 @@ public class ImageEditScreen extends Screen {
         @Override
         protected void updateMessage() {
             double val = getValue() / 100.0;
-            setMessage(Component.literal("缩放: " + df.format(val) + "x"));
+            setMessage(Component.translatable("overlayer.screen.image_edit.slide.zoom").append(df.format(val) + "x"));
         }
     }
 
@@ -294,7 +403,7 @@ public class ImageEditScreen extends Screen {
         @Override
         protected void updateMessage() {
             double val = getValue() / 100.0;
-            setMessage(Component.literal("透明度: " + df.format(val)));
+            setMessage(Component.translatable("overlayer.screen.image_edit.slide.alpha").append(df.format(val)));
         }
     }
 }

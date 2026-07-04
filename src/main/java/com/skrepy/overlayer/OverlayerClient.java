@@ -1,8 +1,5 @@
 package com.skrepy.overlayer;
 
-import com.skrepy.overlayer.client.render.OverlayRenderer;
-
-import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;

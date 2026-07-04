@@ -36,12 +36,14 @@ public class OverlayerDataManager {
         Path path = getDataPath();
         try {
             Files.createDirectories(path.getParent());
-            try (Writer writer = Files.newBufferedWriter(path)) {
-                GSON.toJson(data, writer);
-                Overlayer.LOGGER.debug("数据已保存到 {}", path);
-            }
+            String json = GSON.toJson(data);
+            // 打印路径长度和JSON长度，便于调试
+            Overlayer.LOGGER.debug("保存数据: JSON长度={}, 路径={}", json.length(), path.toAbsolutePath());
+            // 使用 Files.writeString 确保完整写入
+            Files.writeString(path, json);
+            Overlayer.LOGGER.debug("数据已保存到 {}", path);
         } catch (IOException e) {
-            Overlayer.LOGGER.error("保存配置文件失败", e);
+            Overlayer.LOGGER.error("保存配置文件失败", e); // 打印堆栈
         }
     }
 }

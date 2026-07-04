@@ -7,23 +7,25 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.skrepy.overlayer.render.OverlayRenderer;
 
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 
 /**
- * Screen 的 Mixin 类。
+ * Gui 的 Mixin 类。
  * <p>
- * 作用：用于在非游戏界面显示实例
+ * 作用：用于在游戏界面显示实例
  * </p>
  *
  * @author Skrepy
  * @since 1.0.0
  */
-@Mixin(Screen.class)
-public class ScreenMixin {
+@Mixin(Gui.class)
+public class GuiMixin {
 
     @Inject(method = "render", at = @At("RETURN"))
-    private void onRender(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+    private void onRender(GuiGraphics guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
+        float partialTick = deltaTracker.getGameTimeDeltaPartialTick(false);
         OverlayRenderer.renderOverlays(guiGraphics, partialTick);
     }
 }
