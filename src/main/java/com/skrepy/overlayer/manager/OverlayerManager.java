@@ -1,5 +1,8 @@
 package com.skrepy.overlayer.manager;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,6 +41,27 @@ public class OverlayerManager {
         OverlayerData data = new OverlayerData();
         data.setImageInstances(new ArrayList<>(instances));
         OverlayerDataManager.save(data);
+    }
+
+    public static String getFileExtension(String filePath) {
+        if (filePath == null || filePath.isEmpty()) {
+            return "";
+        }
+        String fileName = filePath.substring(filePath.lastIndexOf('/') + 1);
+        fileName = fileName.substring(fileName.lastIndexOf('\\') + 1); // Windows 兼容
+        int dotIndex = fileName.lastIndexOf('.');
+        if (dotIndex > 0 && dotIndex < fileName.length() - 1) {
+            return fileName.substring(dotIndex + 1);
+        }
+        return "";
+    }
+
+    public static boolean fileExists(String filePath) {
+        if (filePath == null || filePath.isEmpty()) {
+            return false;
+        }
+        Path path = Paths.get(filePath);
+        return Files.exists(path) && Files.isRegularFile(path);
     }
 
     public static String selectFile(MemoryStack stack) {

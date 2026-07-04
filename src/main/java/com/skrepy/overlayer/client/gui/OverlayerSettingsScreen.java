@@ -1,12 +1,12 @@
 package com.skrepy.overlayer.client.gui;
 
-import static com.skrepy.overlayer.manager.OverlayerManager.selectFile;
+import static com.skrepy.overlayer.Overlayer.validFormat;
+import static com.skrepy.overlayer.manager.OverlayerManager.*;
 
 import java.util.List;
 
 import org.lwjgl.system.MemoryStack;
 
-import com.skrepy.overlayer.Overlayer;
 import com.skrepy.overlayer.client.gui.components.ImageList;
 import com.skrepy.overlayer.data.ImageEntry;
 import com.skrepy.overlayer.manager.OverlayerManager;
@@ -33,7 +33,7 @@ public class OverlayerSettingsScreen extends Screen {
 
     private final Screen lastScreen;
     private final OverlayerManager manager;
-    private final List<ImageEntry> imageEntries; // 直接引用 manager 的列表
+    private final List<ImageEntry> imageEntries;
 
     private EditBox pathInput;
     private Button browseButton;
@@ -50,8 +50,7 @@ public class OverlayerSettingsScreen extends Screen {
         super(TITLE);
         this.lastScreen = lastScreen;
         this.manager = OverlayerManager.getInstance();
-        this.imageEntries = manager.getInstances(); // 直接引用
-        // 数据已经在 Overlayer 主类中加载，无需再次加载
+        this.imageEntries = manager.getInstances();
     }
 
     @Override
@@ -86,9 +85,7 @@ public class OverlayerSettingsScreen extends Screen {
         this.addRenderableWidget(this.clearButton);
 
         // 创建 ImageList
-        this.list = new ImageList(
-                this.minecraft, 0, 0, 0, LIST_ENTRY_HEIGHT, this.font, this::removeEntry, this::openEditScreen
-        );
+        this.list = new ImageList(this.minecraft, 0, 0, 0, LIST_ENTRY_HEIGHT, this.font, this::removeEntry, this::openEditScreen);
         this.list.updateEntries(this.imageEntries);
         this.addRenderableWidget(this.list);
 
@@ -98,7 +95,6 @@ public class OverlayerSettingsScreen extends Screen {
     private void openEditScreen(ImageEntry entry) {
         if (this.minecraft != null) {
             this.minecraft.setScreen(new ImageEditScreen(this, entry, (edited) -> {
-                // 编辑后刷新列表并保存
                 this.list.updateEntries(this.imageEntries);
                 manager.save();
             }));
@@ -160,12 +156,26 @@ public class OverlayerSettingsScreen extends Screen {
 
     private void addCurrentPath() {
         String path = this.pathInput.getValue().trim();
+        if (path.startsWith("\"") && path.endsWith("\"")) {
+            path = path.substring(1, path.length() - 1);
+        }
         if (path.isEmpty()) {
-            Overlayer.LOGGER.warn("路径为空，无法添加");
+            OverlayerToast.showWarning(// TODO multiple language
+                    Component.translatable("overlayer.toast.warning.invalid_path.title"), Component.translatable("overlayer.toast.warning.invalid_path.meg.empty_path")
+            );
             return;
         }
-        if (imageEntries.stream().anyMatch(e -> e.getPath().equals(path))) {
-            Overlayer.LOGGER.warn("路径已存在: {}", path);
+        String extension = getFileExtension(path);
+        if (extension.isEmpty()) {
+            OverlayerToast.showWarning(Component.translatable("overlayer.toast.warning.invalid_path.title"), Component.translatable("overlayer.toast.warning.invalid_path.meg.no_extension", extension));
+            return;
+        }
+        if (!validFormat.contains(extension)) {
+            OverlayerToast.showWarning(Component.translatable("overlayer.toast.warning.unsupported_format.title"), Component.translatable("overlayer.toast.warning.unsupported_format.meg", extension));
+            return;
+        }
+        if (!fileExists(path)) {
+            OverlayerToast.showWarning(Component.translatable("overlayer.toast.warning.invalid_path.title"), Component.translatable("overlayer.toast.warning.invalid_path.meg.no_file", extension));
             return;
         }
         int maxId = imageEntries.stream().mapToInt(ImageEntry::getId).max().orElse(0);
@@ -179,16 +189,14 @@ public class OverlayerSettingsScreen extends Screen {
 
     private void removeEntry(ImageEntry entry) {
         if (this.minecraft != null) {
-            this.minecraft.setScreen(new ConfirmScreen(
-                    confirmed -> {
-                        if (confirmed) {
-                            imageEntries.remove(entry);
-                            this.list.updateEntries(imageEntries);
-                            manager.save();
-                        }
-                        this.minecraft.setScreen(this);
-                    }, Component.translatable("overlayer.screen.delete_confirm.title"), Component.translatable("overlayer.screen.delete_confirm.meg"), Component.translatable("overlayer.screen.common.delete"), CommonComponents.GUI_CANCEL
-            ));
+            this.minecraft.setScreen(new ConfirmScreen(confirmed -> {
+                if (confirmed) {
+                    imageEntries.remove(entry);
+                    this.list.updateEntries(imageEntries);
+                    manager.save();
+                }
+                this.minecraft.setScreen(this);
+            }, Component.translatable("overlayer.screen.delete_confirm.title"), Component.translatable("overlayer.screen.delete_confirm.meg"), Component.translatable("overlayer.screen.common.delete"), CommonComponents.GUI_CANCEL));
         }
     }
 
@@ -197,16 +205,14 @@ public class OverlayerSettingsScreen extends Screen {
             return;
         }
         if (this.minecraft != null) {
-            this.minecraft.setScreen(new ConfirmScreen(
-                    confirmed -> {
-                        if (confirmed) {
-                            imageEntries.clear();
-                            this.list.updateEntries(imageEntries);
-                            manager.save();
-                        }
-                        this.minecraft.setScreen(this);
-                    }, Component.translatable("overlayer.screen.delete_all_confirm.title"), Component.translatable("overlayer.screen.delete_all_confirm.meg"), Component.translatable("overlayer.screen.common.delete_all"), CommonComponents.GUI_CANCEL
-            ));
+            this.minecraft.setScreen(new ConfirmScreen(confirmed -> {
+                if (confirmed) {
+                    imageEntries.clear();
+                    this.list.updateEntries(imageEntries);
+                    manager.save();
+                }
+                this.minecraft.setScreen(this);
+            }, Component.translatable("overlayer.screen.delete_all_confirm.title"), Component.translatable("overlayer.screen.delete_all_confirm.meg"), Component.translatable("overlayer.screen.common.delete_all"), CommonComponents.GUI_CANCEL));
         }
     }
 }

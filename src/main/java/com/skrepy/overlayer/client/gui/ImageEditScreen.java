@@ -1,6 +1,7 @@
 package com.skrepy.overlayer.client.gui;
 
-import static com.skrepy.overlayer.manager.OverlayerManager.selectFile;
+import static com.skrepy.overlayer.Overlayer.validFormat;
+import static com.skrepy.overlayer.manager.OverlayerManager.*;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -24,7 +25,9 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.StringWidget;
+import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -42,7 +45,7 @@ public class ImageEditScreen extends Screen {
     private final ImageEntry entry;
     private final Consumer<ImageEntry> onSave;
 
-    // 右侧控件
+    // 控件
     private EditBox pathInput;
     private Button browseButton;
     private ExtendedSlider xSlider;
@@ -65,7 +68,9 @@ public class ImageEditScreen extends Screen {
     // 缓存预览图片尺寸和文件状态
     private String currentPreviewPath = null;
     private Dimension currentPreviewDimension = null;
-    private boolean previewFileExists = true;   // 标记文件是否存在，避免反复尝试
+    private boolean previewFileExists = true;
+
+    private boolean isChanged;
 
     private final DecimalFormat df = new DecimalFormat("0.00");
 
@@ -81,6 +86,8 @@ public class ImageEditScreen extends Screen {
                 break;
             }
         }
+        // 初始状态与 entry 一致，未修改
+        isChanged = false;
     }
 
     @Override
@@ -129,12 +136,18 @@ public class ImageEditScreen extends Screen {
         this.pathInput = new EditBox(this.font, rightStartX + rightMargin, startY, pathWidth, 20, Component.literal("图片路径"));
         this.pathInput.setMaxLength(Integer.MAX_VALUE);
         this.pathInput.setValue(entry.getPath());
+        // **** 路径文本变化时标记为已修改 ****
+        this.pathInput.setResponder(s -> {
+            if (!s.equals(entry.getPath())) {
+                isChanged = true;
+            }
+        });
         this.addRenderableWidget(this.pathInput);
 
         this.browseButton = Button.builder(Component.literal("..."), (btn) -> this.openFileChooser()).pos(rightStartX + rightMargin + pathWidth + 4, startY).size(20, 20).build();
         this.addRenderableWidget(this.browseButton);
 
-        // 2) 滑块
+        // 2) 滑块 (在自定义滑块中直接标记修改)
         int sliderY = startY + 28;
         int sliderWidth = rightWidth - 2 * rightMargin;
 
@@ -146,11 +159,11 @@ public class ImageEditScreen extends Screen {
         this.addRenderableWidget(this.ySlider);
 
         sliderY += 20 + spacing;
-        this.scaleSlider = new ScaleSlider(rightStartX + rightMargin, sliderY, sliderWidth, 20, Component.literal("缩放: "), Component.literal(""), 1, 300, (int) (entry.getScale() * 100), 1, 0, false);
+        this.scaleSlider = new ScaleSlider(rightStartX + rightMargin, sliderY, sliderWidth, 20, Component.translatable("overlayer.screen.image_edit.slide.zoom"), Component.literal(""), 1, 300, (int) (entry.getScale() * 100), 1, 0, false);
         this.addRenderableWidget(this.scaleSlider);
 
         sliderY += 20 + spacing;
-        this.alphaSlider = new AlphaSlider(rightStartX + rightMargin, sliderY, sliderWidth, 20, Component.literal("透明度: "), Component.literal(""), 1, 100, (int) (entry.getAlpha() * 100), 1, 0, false);
+        this.alphaSlider = new AlphaSlider(rightStartX + rightMargin, sliderY, sliderWidth, 20, Component.translatable("overlayer.screen.image_edit.slide.alpha"), Component.literal(""), 1, 100, (int) (entry.getAlpha() * 100), 1, 0, false);
         this.addRenderableWidget(this.alphaSlider);
 
         // 3) 图层标签
@@ -167,6 +180,20 @@ public class ImageEditScreen extends Screen {
         this.layerInput.setValue(String.valueOf(entry.getLayer()));
         this.layerInput.setFilter(s -> s.matches("\\d*"));
         this.layerInput.setMaxLength(6);
+        // **** 图层输入变化时标记修改 ****
+        this.layerInput.setResponder(s -> {
+            try {
+                int newLayer = Integer.parseInt(s.trim());
+                if (newLayer != entry.getLayer()) {
+                    isChanged = true;
+                }
+            } catch (NumberFormatException ignored) {
+                // 空或无效输入也视为可能修改，但不需要设置，因为后面保存时会回退
+                // 但我们只在有效变化时标记，也可以简单标记为 true
+                // 更安全：只要文本变化就标记 true
+                isChanged = true;
+            }
+        });
         this.addRenderableWidget(this.layerInput);
 
         // 5) 模式按钮
@@ -189,14 +216,17 @@ public class ImageEditScreen extends Screen {
 
         // 预加载预览尺寸
         loadPreviewDimension(entry.getPath());
+        // 初始状态未修改
+        isChanged = false;
     }
 
+    // ========== 渲染 ==========
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        // 检测路径是否变化，若变化则重新加载（即使文件不存在，也会更新缓存状态）
+        // 检测路径变化，更新预览尺寸缓存
         String currentPath = this.pathInput.getValue();
         if (!currentPath.equals(currentPreviewPath)) {
             loadPreviewDimension(currentPath);
@@ -208,7 +238,6 @@ public class ImageEditScreen extends Screen {
             texture = entry.getCurrentFrame(this.minecraft.getTextureManager(), 0);
         }
 
-        // 如果纹理有效且我们缓存了尺寸，则绘制图片
         if (texture != null && currentPreviewDimension != null && previewFileExists) {
             int imgWidth = currentPreviewDimension.width;
             int imgHeight = currentPreviewDimension.height;
@@ -223,11 +252,10 @@ public class ImageEditScreen extends Screen {
 
             guiGraphics.blit(texture, drawX, drawY, 0, 0, drawWidth, drawHeight, drawWidth, drawHeight);
         } else {
-            // 占位符：显示相应提示
             guiGraphics.fill(previewX, previewY, previewX + previewSize, previewY + previewSize, 0xFF888888);
             String message;
             if (currentPreviewPath != null && !previewFileExists) {
-                message = "文件不存在";
+                message = Component.translatable("overlayer.toast.warning.invalid_path.meg.no_file").getString();
             } else {
                 message = Component.translatable("overlayer.screen.image_edit.label.preview").getString();
             }
@@ -235,10 +263,14 @@ public class ImageEditScreen extends Screen {
         }
     }
 
+    // ========== 交互事件 ==========
+
     private void cycleMode() {
         modeIndex = (modeIndex + 1) % MODES.length;
         this.modeButton.setMessage(Component.translatable("overlayer.screen.image_edit.button.mode").append(MODES[modeIndex]));
         entry.setDisplayMode(MODE_VALUES[modeIndex]);
+        // **** 模式切换标记修改 ****
+        isChanged = true;
     }
 
     private void openFileChooser() {
@@ -249,16 +281,41 @@ public class ImageEditScreen extends Screen {
                 entry.setPath(result);
                 entry.clearCache();
                 loadPreviewDimension(result);
+                // **** 文件选择会触发 pathInput 的 responder，已经设置了 isChanged，但保险起见再设一次 ****
+                isChanged = true;
             }
         }
     }
 
     private void saveAndClose() {
         String path = this.pathInput.getValue().trim();
+        if (path.startsWith("\"") && path.endsWith("\"")) {
+            path = path.substring(1, path.length() - 1);
+        }
+        String extension = getFileExtension(path);
+
+        // ====== 验证输入 ======
         if (path.isEmpty()) {
-            Overlayer.LOGGER.warn("路径不能为空，保存取消");
+            OverlayerToast.showWarning(Component.translatable("overlayer.toast.warning.invalid_path.title"), Component.translatable("overlayer.toast.warning.invalid_path.meg.empty_path"));
+            return; // 退出，不保存
+        }
+
+        if (extension.isEmpty()) {
+            OverlayerToast.showWarning(Component.translatable("overlayer.toast.warning.invalid_path.title"), Component.translatable("overlayer.toast.warning.invalid_path.meg.no_extension"));
             return;
         }
+
+        if (!validFormat.contains(extension)) {
+            OverlayerToast.showWarning(Component.translatable("overlayer.toast.warning.unsupported_format.title"), Component.translatable("overlayer.toast.warning.unsupported_format.meg", extension));
+            return;
+        }
+
+        if (!fileExists(path)) {
+            OverlayerToast.showWarning(Component.translatable("overlayer.toast.warning.invalid_path.title"), Component.translatable("overlayer.toast.warning.invalid_path.meg.no_file"));
+            return;
+        }
+
+        // ====== 应用更改 ======
         if (!entry.getPath().equals(path)) {
             entry.setPath(path);
             entry.clearCache();
@@ -278,15 +335,26 @@ public class ImageEditScreen extends Screen {
         }
 
         entry.setDisplayMode(MODE_VALUES[modeIndex]);
+
+        // 保存并关闭
         OverlayerManager.getInstance().save();
         onSave.accept(entry);
+        isChanged = false; // 已保存
+
         if (this.minecraft != null) {
             this.minecraft.setScreen(lastScreen);
         }
     }
 
     private void cancel() {
-        if (this.minecraft != null) {
+        if (this.minecraft == null) return;
+        if (isChanged) {
+            this.minecraft.setScreen(new ConfirmScreen(confirmed -> {
+                if (confirmed) {
+                    this.minecraft.setScreen(lastScreen);
+                }
+            }, Component.translatable("overlayer.screen.unsaved.title"), Component.translatable("overlayer.screen.unsaved.meg"), CommonComponents.GUI_YES, CommonComponents.GUI_NO));
+        } else {
             this.minecraft.setScreen(lastScreen);
         }
     }
@@ -301,33 +369,25 @@ public class ImageEditScreen extends Screen {
         return true;
     }
 
-    // ---------- 预览尺寸加载（核心改进） ----------
+    // ========== 预览尺寸加载 ==========
     private void loadPreviewDimension(String path) {
-        // 1. 空路径处理
         if (path == null || path.isEmpty()) {
             currentPreviewPath = null;
             currentPreviewDimension = null;
             previewFileExists = false;
             return;
         }
-
-        // 2. 如果路径相同且文件已标记为不存在，则直接返回（避免反复报错）
         if (path.equals(currentPreviewPath) && !previewFileExists) {
             return;
         }
-
-        // 3. 使用 Path 检查文件存在性和可读性
         Path filePath = Paths.get(path);
         if (!Files.exists(filePath) || !Files.isReadable(filePath)) {
-            // 文件不存在或不可读，更新缓存
             currentPreviewPath = path;
             currentPreviewDimension = null;
             previewFileExists = false;
             Overlayer.LOGGER.debug("预览文件不存在或不可读: {}", path);
             return;
         }
-
-        // 4. 尝试读取图片尺寸
         try (InputStream is = Files.newInputStream(filePath)) {
             BufferedImage img = ImageIO.read(is);
             if (img != null) {
@@ -336,7 +396,6 @@ public class ImageEditScreen extends Screen {
                 previewFileExists = true;
                 Overlayer.LOGGER.debug("成功加载预览图片尺寸: {} x {}", img.getWidth(), img.getHeight());
             } else {
-                // ImageIO 无法解码，但文件存在
                 currentPreviewDimension = null;
                 previewFileExists = false;
                 Overlayer.LOGGER.warn("无法解码图片文件: {}", path);
@@ -348,7 +407,7 @@ public class ImageEditScreen extends Screen {
         }
     }
 
-    // ---------- 自定义滑动条内部类（保持不变） ----------
+    // ========== 自定义滑块内部类（标记修改） ==========
     private class XSlider extends ExtendedSlider {
         public XSlider(int x, int y, int width, int height, Component prefix, Component suffix, int minValue, int maxValue, int currentValue, int stepSize, int precision, boolean drawString) {
             super(x, y, width, height, prefix, suffix, minValue, maxValue, currentValue, stepSize, precision, drawString);
@@ -357,6 +416,7 @@ public class ImageEditScreen extends Screen {
         @Override
         protected void applyValue() {
             entry.setXOffset((int) this.getValue());
+            isChanged = true; // **** 标记修改 ****
         }
     }
 
@@ -368,6 +428,7 @@ public class ImageEditScreen extends Screen {
         @Override
         protected void applyValue() {
             entry.setYOffset((int) this.getValue());
+            isChanged = true;
         }
     }
 
@@ -380,6 +441,7 @@ public class ImageEditScreen extends Screen {
         @Override
         protected void applyValue() {
             entry.setScale(this.getValue() / 100.0);
+            isChanged = true;
         }
 
         @Override
@@ -398,6 +460,7 @@ public class ImageEditScreen extends Screen {
         @Override
         protected void applyValue() {
             entry.setAlpha(this.getValue() / 100.0);
+            isChanged = true;
         }
 
         @Override

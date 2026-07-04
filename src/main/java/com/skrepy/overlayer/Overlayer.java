@@ -1,5 +1,7 @@
 package com.skrepy.overlayer;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -20,6 +22,7 @@ import net.neoforged.neoforge.event.server.ServerStartingEvent;
 public class Overlayer {
     public static final String MOD_ID = "overlayer";
     public static final Logger LOGGER = LogUtils.getLogger();
+    public static final List<String> validFormat = List.of("png", "jpg", "jpeg", "bmp", "gif");
 
     public Overlayer(IEventBus modEventBus, ModContainer modContainer) {
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
