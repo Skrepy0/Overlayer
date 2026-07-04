@@ -191,6 +191,7 @@ idea {
         downloadJavadoc = true
     }
 }
+
 spotless {
     java {
         target 'src/**/*.java'

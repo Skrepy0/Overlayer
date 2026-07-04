@@ -1,11 +1,15 @@
 package com.skrepy.overlayer;
 
+import com.skrepy.overlayer.client.render.OverlayRenderer;
+
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 
@@ -18,5 +22,10 @@ public class OverlayerClient {
 
     @SubscribeEvent
     static void onClientSetup(FMLClientSetupEvent event) {
+    }
+
+    @SubscribeEvent
+    public static void registerGuiLayers(RegisterGuiLayersEvent event) {
+
     }
 }
