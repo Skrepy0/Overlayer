@@ -3,6 +3,17 @@ package com.skrepy.overlayer;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 public class Config {
+
+    public static boolean isIsOpenContainerScreen() {
+        return isOpenContainerScreen;
+    }
+
+    public static void setIsOpenContainerScreen(boolean isOpenContainerScreen) {
+        Config.isOpenContainerScreen = isOpenContainerScreen;
+    }
+
+    private static boolean isOpenContainerScreen;
+
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
     private static final ModConfigSpec.IntValue titleScreenBtnXOffset = BUILDER.defineInRange("titleScreenBtnXOffset", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
