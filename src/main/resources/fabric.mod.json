@@ -1,0 +1,34 @@
+{
+	"schemaVersion": 1,
+	"id": "overlayer",
+	"version": "${version}",
+	"name": "Overlayer",
+	"description": "Overlay custom images anywhere on your game screen, with full control over position, scale, opacity, and layer order.",
+	"authors": [
+		"Skrepy2233"
+	],
+	"contact": {
+		"homepage": "https://github.com/Skrepy0/Overlayer",
+		"sources": "https://github.com/Skrepy0/Overlayer/issues"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/overlayer/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.skrepy.overlayer.Overlayer"
+		],
+		"fabric-datagen": [
+			"com.skrepy.overlayer.OverlayerDataGenerator"
+		]
+	},
+	"mixins": [
+		"overlayer.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.18.4",
+		"minecraft": "~1.21.1",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}
