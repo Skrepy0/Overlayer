@@ -15,11 +15,19 @@ public class ZHCNLanProvider extends LanguageProvider {
     protected void addTranslations() {
         add("overlayer.configuration.title", "Overlayer");
 
+        add("overlayer.configuration.titleScreenBtnXOffset", "主界面按钮X轴偏移");
+        add("overlayer.configuration.titleScreenBtnYOffset", "主界面按钮Y轴偏移");
+        add("overlayer.configuration.optionsScreenBtnXOffset", "设置界面按钮X轴偏移");
+        add("overlayer.configuration.optionsScreenBtnYOffset", "设置界面按钮Y轴偏移");
+
         add("overlayer.screen.common.save", "保存");
         add("overlayer.screen.common.cancel", "取消");
         add("overlayer.screen.common.delete", "删除");
         add("overlayer.screen.common.select_pic", "选择图片文件");
         add("overlayer.screen.common.delete_all", "§c清空§r");
+
+        add("overlayer.screen.button.select_file.tooltip", "选择图片文件");
+        add("overlayer.screen.button.config.tooltip", "Overlayer配置");
 
         add("overlayer.screen.settings_page.title", "Overlayer");
         add("overlayer.screen.settings_page.button.add", "添加");
@@ -30,7 +38,7 @@ public class ZHCNLanProvider extends LanguageProvider {
         add("overlayer.screen.delete_all_confirm.meg", "§6确定要清空所有图片实例吗, 此过程不可逆？§r");
 
         add("overlayer.screen.image_edit.title", "编辑图片实例");
-        add("overlayer.screen.image_edit.button.mode", "模式:");
+        add("overlayer.screen.image_edit.button.mode", "模式: ");
         add("overlayer.screen.image_edit.button.mode.always", "总是");
         add("overlayer.screen.image_edit.button.mode.ingame", "仅游戏中");
         add("overlayer.screen.image_edit.button.mode.not_ingame", "仅非游戏中");

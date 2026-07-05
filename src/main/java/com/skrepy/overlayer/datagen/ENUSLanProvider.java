@@ -14,11 +14,19 @@ public class ENUSLanProvider extends LanguageProvider {
     protected void addTranslations() {
         add("overlayer.configuration.title", "Overlayer");
 
+        add("overlayer.configuration.titleScreenBtnXOffset", "Title Screen Button X Offset");
+        add("overlayer.configuration.titleScreenBtnYOffset", "Title Screen Button Y Offset");
+        add("overlayer.configuration.optionsScreenBtnXOffset", "Options Screen Button X Offset");
+        add("overlayer.configuration.optionsScreenBtnYOffset", "Options Screen Button Y Offset");
+
         add("overlayer.screen.common.save", "Save");
         add("overlayer.screen.common.cancel", "Cancel");
         add("overlayer.screen.common.delete", "Delete");
         add("overlayer.screen.common.select_pic", "Select Image File");
         add("overlayer.screen.common.delete_all", "§cClear All§r");
+
+        add("overlayer.screen.button.select_file.tooltip", "Select Image File");
+        add("overlayer.screen.button.config.tooltip", "Overlayer Configuration");
 
         add("overlayer.screen.settings_page.title", "Overlayer");
         add("overlayer.screen.settings_page.button.add", "Add");
@@ -29,7 +37,7 @@ public class ENUSLanProvider extends LanguageProvider {
         add("overlayer.screen.delete_all_confirm.meg", "§6Are you sure you want to clear all image instances? This action is irreversible.§r");
 
         add("overlayer.screen.image_edit.title", "Edit Image Instance");
-        add("overlayer.screen.image_edit.button.mode", "Mode:");
+        add("overlayer.screen.image_edit.button.mode", "Mode: ");
         add("overlayer.screen.image_edit.button.mode.always", "Always");
         add("overlayer.screen.image_edit.button.mode.ingame", "In-Game");
         add("overlayer.screen.image_edit.button.mode.not_ingame", "Not In-Game");

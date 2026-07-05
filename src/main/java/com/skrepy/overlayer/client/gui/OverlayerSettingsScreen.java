@@ -14,6 +14,7 @@ import com.skrepy.overlayer.manager.OverlayerManager;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.StringWidget;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
@@ -68,7 +69,7 @@ public class OverlayerSettingsScreen extends Screen {
         this.pathInput.setMaxLength(Integer.MAX_VALUE);
         this.addRenderableWidget(this.pathInput);
 
-        this.browseButton = Button.builder(Component.literal("..."), (btn) -> this.openFileChooser()).pos(this.width / 2 + 95, inputY).size(20, 20).build();
+        this.browseButton = Button.builder(Component.literal("..."), (btn) -> this.openFileChooser()).pos(this.width / 2 + 95, inputY).size(20, 20).tooltip(Tooltip.create(Component.translatable("overlayer.screen.button.select_file.tooltip"))).build();
         this.addRenderableWidget(this.browseButton);
 
         int buttonRowY = this.height - 30;

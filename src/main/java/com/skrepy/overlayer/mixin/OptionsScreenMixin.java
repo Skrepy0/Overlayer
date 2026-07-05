@@ -9,10 +9,12 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.skrepy.overlayer.Config;
 import com.skrepy.overlayer.client.gui.OverlayerSettingsScreen;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.network.chat.Component;
@@ -41,13 +43,12 @@ public abstract class OptionsScreenMixin {
             return;
         }
 
-        int buttonX = videoButton.getX() - 20 - 4;
-        int buttonY = videoButton.getY();
+        int buttonX = videoButton.getX() - 20 - 4 + Config.getOptionsScreenBtnXOffset();
+        int buttonY = videoButton.getY() + Config.getOptionsScreenBtnYOffset();
 
-        Button customButton = Button.builder(
-                Component.literal("O"), (button) -> {
-                    Minecraft.getInstance().setScreen(new OverlayerSettingsScreen(screen));
-                }).pos(buttonX, buttonY).size(20, 20).build();
+        Button customButton = Button.builder(Component.literal("O"), (button) -> {
+            Minecraft.getInstance().setScreen(new OverlayerSettingsScreen(screen));
+        }).pos(buttonX, buttonY).size(20, 20).tooltip(Tooltip.create(Component.translatable("overlayer.screen.button.config.tooltip"))).build();
 
         overlayer$AddWidgetToScreen(screen, customButton);
     }

@@ -25,6 +25,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.StringWidget;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
@@ -86,7 +87,6 @@ public class ImageEditScreen extends Screen {
                 break;
             }
         }
-        // 初始状态与 entry 一致，未修改
         isChanged = false;
     }
 
@@ -136,7 +136,6 @@ public class ImageEditScreen extends Screen {
         this.pathInput = new EditBox(this.font, rightStartX + rightMargin, startY, pathWidth, 20, Component.literal("图片路径"));
         this.pathInput.setMaxLength(Integer.MAX_VALUE);
         this.pathInput.setValue(entry.getPath());
-        // **** 路径文本变化时标记为已修改 ****
         this.pathInput.setResponder(s -> {
             if (!s.equals(entry.getPath())) {
                 isChanged = true;
@@ -144,7 +143,7 @@ public class ImageEditScreen extends Screen {
         });
         this.addRenderableWidget(this.pathInput);
 
-        this.browseButton = Button.builder(Component.literal("..."), (btn) -> this.openFileChooser()).pos(rightStartX + rightMargin + pathWidth + 4, startY).size(20, 20).build();
+        this.browseButton = Button.builder(Component.literal("..."), (btn) -> this.openFileChooser()).pos(rightStartX + rightMargin + pathWidth + 4, startY).size(20, 20).tooltip(Tooltip.create(Component.translatable("overlayer.screen.button.select_file.tooltip"))).build();
         this.addRenderableWidget(this.browseButton);
 
         // 2) 滑块 (在自定义滑块中直接标记修改)
@@ -180,7 +179,6 @@ public class ImageEditScreen extends Screen {
         this.layerInput.setValue(String.valueOf(entry.getLayer()));
         this.layerInput.setFilter(s -> s.matches("\\d*"));
         this.layerInput.setMaxLength(6);
-        // **** 图层输入变化时标记修改 ****
         this.layerInput.setResponder(s -> {
             try {
                 int newLayer = Integer.parseInt(s.trim());
@@ -188,9 +186,6 @@ public class ImageEditScreen extends Screen {
                     isChanged = true;
                 }
             } catch (NumberFormatException ignored) {
-                // 空或无效输入也视为可能修改，但不需要设置，因为后面保存时会回退
-                // 但我们只在有效变化时标记，也可以简单标记为 true
-                // 更安全：只要文本变化就标记 true
                 isChanged = true;
             }
         });
@@ -214,9 +209,7 @@ public class ImageEditScreen extends Screen {
         this.cancelButton = Button.builder(CANCEL, (btn) -> this.cancel()).pos(btnStartX + btnWidth + btnSpacing, buttonY).size(btnWidth, 20).build();
         this.addRenderableWidget(this.cancelButton);
 
-        // 预加载预览尺寸
         loadPreviewDimension(entry.getPath());
-        // 初始状态未修改
         isChanged = false;
     }
 
@@ -226,7 +219,6 @@ public class ImageEditScreen extends Screen {
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        // 检测路径变化，更新预览尺寸缓存
         String currentPath = this.pathInput.getValue();
         if (!currentPath.equals(currentPreviewPath)) {
             loadPreviewDimension(currentPath);
@@ -269,8 +261,6 @@ public class ImageEditScreen extends Screen {
         modeIndex = (modeIndex + 1) % MODES.length;
         this.modeButton.setMessage(Component.translatable("overlayer.screen.image_edit.button.mode").append(MODES[modeIndex]));
         entry.setDisplayMode(MODE_VALUES[modeIndex]);
-        // **** 模式切换标记修改 ****
-        isChanged = true;
     }
 
     private void openFileChooser() {
@@ -281,8 +271,6 @@ public class ImageEditScreen extends Screen {
                 entry.setPath(result);
                 entry.clearCache();
                 loadPreviewDimension(result);
-                // **** 文件选择会触发 pathInput 的 responder，已经设置了 isChanged，但保险起见再设一次 ****
-                isChanged = true;
             }
         }
     }
@@ -416,7 +404,6 @@ public class ImageEditScreen extends Screen {
         @Override
         protected void applyValue() {
             entry.setXOffset((int) this.getValue());
-            isChanged = true; // **** 标记修改 ****
         }
     }
 
@@ -428,7 +415,6 @@ public class ImageEditScreen extends Screen {
         @Override
         protected void applyValue() {
             entry.setYOffset((int) this.getValue());
-            isChanged = true;
         }
     }
 
@@ -441,7 +427,6 @@ public class ImageEditScreen extends Screen {
         @Override
         protected void applyValue() {
             entry.setScale(this.getValue() / 100.0);
-            isChanged = true;
         }
 
         @Override
@@ -460,7 +445,6 @@ public class ImageEditScreen extends Screen {
         @Override
         protected void applyValue() {
             entry.setAlpha(this.getValue() / 100.0);
-            isChanged = true;
         }
 
         @Override
