@@ -14,6 +14,10 @@ Overlayer is a client-side Minecraft mod that allows you to overlay any image (P
 - **Game-aware** – Images can be set to show only while playing or only on the main menu.
 - **Lightweight** – Minimal performance impact.
 
+## 📦 Installation
+
+Download the latest Overlayer release compatible with your game and mod loader from the [Releases page](https://github.com/Skrepy0/Overlayer/releases).
+
 ## 📄 License
 
 This project is licensed under the MIT License – see the [LICENSE](LICENSE) file for details.
