@@ -169,6 +169,7 @@ public class ImageEntry {
     // ---------- 纹理加载 ----------
     @Nullable
     public synchronized Identifier getCurrentFrame(TextureManager textureManager, float partialTick) {
+        // partialTick is intentionally unused: static images don't need it, GIF uses system time.
         if (isGif && !gifLoaded) {
             if (!gifLoading) {
                 loadGif(textureManager);
@@ -278,7 +279,7 @@ public class ImageEntry {
             if (nodes.getLength() > 0) {
                 IIOMetadataNode node = (IIOMetadataNode) nodes.item(0);
                 String delayStr = node.getAttribute("delayTime");
-                if (delayStr != null && !delayStr.isEmpty()) {
+                if (!delayStr.isEmpty()) {
                     int delay = Integer.parseInt(delayStr);
                     return delay * 10;
                 }
@@ -314,7 +315,6 @@ public class ImageEntry {
                 int g = (argb >> 8) & 0xFF;
                 int b = argb & 0xFF;
                 int abgr = (a << 24) | (b << 16) | (g << 8) | r;
-                // 使用 setColor (ABGR)
                 nativeImage.setColor(x, y, abgr);
             }
         }
@@ -324,7 +324,7 @@ public class ImageEntry {
     @Nullable
     private Identifier getCurrentGifFrame() {
         if (gifTextures == null || gifTextures.isEmpty()) return null;
-        if (gifTotalDelay == 0) return gifTextures.get(0);
+        if (gifTotalDelay == 0) return gifTextures.getFirst();
 
         long elapsed = System.currentTimeMillis() - gifStartTime;
         int cycleTime = (int) (elapsed % gifTotalDelay);
@@ -335,7 +335,7 @@ public class ImageEntry {
                 return gifTextures.get(i);
             }
         }
-        return gifTextures.get(0);
+        return gifTextures.getFirst();
     }
 
     // ---------- 静态图片加载 ----------

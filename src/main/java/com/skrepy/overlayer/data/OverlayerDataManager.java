@@ -38,9 +38,7 @@ public class OverlayerDataManager {
         try {
             Files.createDirectories(path.getParent());
             String json = GSON.toJson(data);
-            // 打印路径长度和JSON长度，便于调试
             Overlayer.LOGGER.debug("保存数据: JSON长度={}, 路径={}", json.length(), path.toAbsolutePath());
-            // 使用 Files.writeString 确保完整写入
             Files.writeString(path, json);
             Overlayer.LOGGER.debug("数据已保存到 {}", path);
         } catch (IOException e) {

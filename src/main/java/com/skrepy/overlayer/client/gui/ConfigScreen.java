@@ -15,8 +15,7 @@ public class ConfigScreen extends Screen {
     private static final Text[] LABELS = {Text.translatable("overlayer.configuration.titleScreenBtnXOffset"), Text.translatable("overlayer.configuration.titleScreenBtnYOffset"), Text.translatable("overlayer.configuration.optionsScreenBtnXOffset"), Text.translatable("overlayer.configuration.optionsScreenBtnYOffset")
     };
 
-    private TextFieldWidget[] inputFields = new TextFieldWidget[4];
-    private ButtonWidget doneButton;
+    private final TextFieldWidget[] inputFields = new TextFieldWidget[4];
 
     public ConfigScreen() {
         super(Text.translatable("overlayer.configuration"));
@@ -38,6 +37,7 @@ public class ConfigScreen extends Screen {
 
         int centerX = this.width / 2;
 
+        // 标题
         TextWidget titleWidget = new TextWidget(this.title, this.textRenderer);
         titleWidget.setX(centerX - this.textRenderer.getWidth(this.title) / 2);
         titleWidget.setY(20);
@@ -48,22 +48,28 @@ public class ConfigScreen extends Screen {
         int startY = titleBottom + 10;
         int fieldWidth = 120;
         int fieldHeight = 20;
-        int spacing = 10;       // 行间距
-        int labelFieldGap = 12; // 标签与输入框之间的间距
+        int spacing = 10;          // 行间距
+        int labelFieldGap = 64;    // 标签与输入框之间的间距
+
+        int maxLabelWidth = 0;
+        for (Text labelText : LABELS) {
+            int w = this.textRenderer.getWidth(labelText);
+            if (w > maxLabelWidth) maxLabelWidth = w;
+        }
+
+        int totalWidth = maxLabelWidth + labelFieldGap + fieldWidth;
+        int startX = centerX - totalWidth / 2; // 整体居中
 
         for (int i = 0; i < 4; i++) {
             int y = startY + i * (fieldHeight + spacing + 12);
 
             TextWidget label = new TextWidget(LABELS[i], this.textRenderer);
-            int labelWidth = this.textRenderer.getWidth(LABELS[i]);
-            int inputX = centerX - fieldWidth / 2;
-            int labelX = inputX - labelWidth - labelFieldGap;
-            label.setX(labelX);
+            label.setX(startX);
             label.setY(y + (fieldHeight - this.textRenderer.fontHeight) / 2);
             addDrawableChild(label);
 
             TextFieldWidget textField = new TextFieldWidget(
-                    this.textRenderer, inputX, y, fieldWidth, fieldHeight, Text.literal("")
+                    this.textRenderer, startX + maxLabelWidth + labelFieldGap, y, fieldWidth, fieldHeight, Text.literal("")
             );
             textField.setTextPredicate(s -> s.matches("-?\\d*"));
             textField.setMaxLength(11);
@@ -73,7 +79,7 @@ public class ConfigScreen extends Screen {
         }
 
         int buttonY = startY + 5 * (fieldHeight + spacing + 12) + 20;
-        this.doneButton = ButtonWidget.builder(
+        ButtonWidget doneButton = ButtonWidget.builder(
                 ScreenTexts.DONE, (btn) -> this.close()
         ).position(centerX - 130, buttonY).size(260, 20).build();
         addDrawableChild(doneButton);
