@@ -16,6 +16,7 @@ public class ModENUSLangProvider extends FabricLanguageProvider {
     public void generateTranslations(RegistryWrapper.WrapperLookup registryLookup, TranslationBuilder translationBuilder) {
         translationBuilder.add("overlayer.configuration.title", "Overlayer");
 
+        translationBuilder.add("overlayer.configuration", "Overlayer UI Configuration");
         translationBuilder.add("overlayer.configuration.titleScreenBtnXOffset", "Title Screen Button X Offset");
         translationBuilder.add("overlayer.configuration.titleScreenBtnYOffset", "Title Screen Button Y Offset");
         translationBuilder.add("overlayer.configuration.optionsScreenBtnXOffset", "Options Screen Button X Offset");
@@ -28,7 +29,7 @@ public class ModENUSLangProvider extends FabricLanguageProvider {
         translationBuilder.add("overlayer.screen.common.delete_all", "§cClear All§r");
 
         translationBuilder.add("overlayer.screen.button.select_file.tooltip", "Select Image File");
-        translationBuilder.add("overlayer.screen.button.config.tooltip", "Overlayer Configuration");
+        translationBuilder.add("overlayer.screen.button.config.tooltip", "Overlayer Configuration\nHold §6[SHIFT]§r to enter UI configuration screen");
 
         translationBuilder.add("overlayer.screen.settings_page.title", "Overlayer");
         translationBuilder.add("overlayer.screen.settings_page.button.add", "Add");

@@ -6,6 +6,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.skrepy.overlayer.Config;
+import com.skrepy.overlayer.client.gui.ConfigScreen;
 import com.skrepy.overlayer.client.gui.OverlayerSettingsScreen;
 
 import net.fabricmc.api.EnvType;
@@ -35,11 +37,17 @@ public abstract class OptionsScreenMixin extends Screen {
             return;
         }
 
-        int buttonX = videoButton.getX() - 20 - 4;
-        int buttonY = videoButton.getY();
+        int buttonX = videoButton.getX() - 20 - 4 + Config.getOptionsScreenBtnXOffset();
+        int buttonY = videoButton.getY() + Config.getOptionsScreenBtnYOffset();
 
         ButtonWidget customButton = ButtonWidget.builder(
-                Text.literal("O"), (btn) -> MinecraftClient.getInstance().setScreen(new OverlayerSettingsScreen(screen))
+                Text.literal("O"), (btn) -> {
+                    if (Screen.hasShiftDown()) {
+                        MinecraftClient.getInstance().setScreen(new ConfigScreen());
+                    } else {
+                        MinecraftClient.getInstance().setScreen(new OverlayerSettingsScreen(screen));
+                    }
+                }
         ).position(buttonX, buttonY).size(20, 20).tooltip(Tooltip.of(Text.translatable("overlayer.screen.button.config.tooltip"))).build();
 
         this.addDrawableChild(customButton);

@@ -5,8 +5,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.skrepy.overlayer.Config;
+import com.skrepy.overlayer.client.gui.ConfigScreen;
 import com.skrepy.overlayer.client.gui.OverlayerSettingsScreen;
-import com.skrepy.overlayer.client.gui.OverlayerToast;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -32,12 +33,16 @@ public abstract class TitleScreenMixin extends Screen {
         }
 
         TitleScreen screen = (TitleScreen) (Object) this;
-        int buttonX = screen.width / 2 + 128;
-        int buttonY = screen.height / 4 + 132;
+        int buttonX = screen.width / 2 + 128 + Config.getTitleScreenBtnXOffset();
+        int buttonY = screen.height / 4 + 132 + Config.getTitleScreenBtnYOffset();
 
         ButtonWidget customButton = ButtonWidget.builder(
                 Text.literal("O"), (btn) -> {
-                    MinecraftClient.getInstance().setScreen(new OverlayerSettingsScreen(screen));
+                    if (Screen.hasShiftDown()) {
+                        MinecraftClient.getInstance().setScreen(new ConfigScreen());
+                    } else {
+                        MinecraftClient.getInstance().setScreen(new OverlayerSettingsScreen(screen));
+                    }
                 }
         ).position(buttonX, buttonY).size(20, 20).tooltip(Tooltip.of(Text.translatable("overlayer.screen.button.config.tooltip"))).build();
 

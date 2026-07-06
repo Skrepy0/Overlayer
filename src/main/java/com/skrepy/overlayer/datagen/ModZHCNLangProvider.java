@@ -15,6 +15,7 @@ public class ModZHCNLangProvider extends FabricLanguageProvider {
     public void generateTranslations(RegistryWrapper.WrapperLookup registryLookup, TranslationBuilder translationBuilder) {
         translationBuilder.add("overlayer.configuration.title", "Overlayer");
 
+        translationBuilder.add("overlayer.configuration", "Overlayer UI 配置");
         translationBuilder.add("overlayer.configuration.titleScreenBtnXOffset", "主界面按钮X轴偏移");
         translationBuilder.add("overlayer.configuration.titleScreenBtnYOffset", "主界面按钮Y轴偏移");
         translationBuilder.add("overlayer.configuration.optionsScreenBtnXOffset", "设置界面按钮X轴偏移");
@@ -27,7 +28,7 @@ public class ModZHCNLangProvider extends FabricLanguageProvider {
         translationBuilder.add("overlayer.screen.common.delete_all", "§c清空§r");
 
         translationBuilder.add("overlayer.screen.button.select_file.tooltip", "选择图片文件");
-        translationBuilder.add("overlayer.screen.button.config.tooltip", "Overlayer配置");
+        translationBuilder.add("overlayer.screen.button.config.tooltip", "Overlayer 配置\n按住 §6[SHIFT]§r 点击进入 UI 配置界面");
 
         translationBuilder.add("overlayer.screen.settings_page.title", "Overlayer");
         translationBuilder.add("overlayer.screen.settings_page.button.add", "添加");

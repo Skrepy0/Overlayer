@@ -1,10 +1,11 @@
 {
+  "overlayer.configuration": "Overlayer UI Configuration",
   "overlayer.configuration.optionsScreenBtnXOffset": "Options Screen Button X Offset",
   "overlayer.configuration.optionsScreenBtnYOffset": "Options Screen Button Y Offset",
   "overlayer.configuration.title": "Overlayer",
   "overlayer.configuration.titleScreenBtnXOffset": "Title Screen Button X Offset",
   "overlayer.configuration.titleScreenBtnYOffset": "Title Screen Button Y Offset",
-  "overlayer.screen.button.config.tooltip": "Overlayer Configuration",
+  "overlayer.screen.button.config.tooltip": "Overlayer Configuration\nHold §6[SHIFT]§r to enter UI configuration screen",
   "overlayer.screen.button.select_file.tooltip": "Select Image File",
   "overlayer.screen.common.cancel": "Cancel",
   "overlayer.screen.common.delete": "Delete",

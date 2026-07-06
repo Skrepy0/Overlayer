@@ -1,10 +1,11 @@
 {
+  "overlayer.configuration": "Overlayer UI 配置",
   "overlayer.configuration.optionsScreenBtnXOffset": "设置界面按钮X轴偏移",
   "overlayer.configuration.optionsScreenBtnYOffset": "设置界面按钮Y轴偏移",
   "overlayer.configuration.title": "Overlayer",
   "overlayer.configuration.titleScreenBtnXOffset": "主界面按钮X轴偏移",
   "overlayer.configuration.titleScreenBtnYOffset": "主界面按钮Y轴偏移",
-  "overlayer.screen.button.config.tooltip": "Overlayer配置",
+  "overlayer.screen.button.config.tooltip": "Overlayer 配置\n按住 §6[SHIFT]§r 点击进入 UI 配置界面",
   "overlayer.screen.button.select_file.tooltip": "选择图片文件",
   "overlayer.screen.common.cancel": "取消",
   "overlayer.screen.common.delete": "删除",

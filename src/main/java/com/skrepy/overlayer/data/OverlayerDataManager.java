@@ -30,6 +30,7 @@ public class OverlayerDataManager {
             Overlayer.LOGGER.error("加载配置文件失败", e);
             return new OverlayerData();
         }
+
     }
 
     public static void save(OverlayerData data) {

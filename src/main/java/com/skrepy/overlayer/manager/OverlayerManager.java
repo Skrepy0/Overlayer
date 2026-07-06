@@ -10,6 +10,7 @@ import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
+import com.skrepy.overlayer.Config;
 import com.skrepy.overlayer.data.ImageEntry;
 import com.skrepy.overlayer.data.OverlayerData;
 import com.skrepy.overlayer.data.OverlayerDataManager;
@@ -35,11 +36,19 @@ public class OverlayerManager {
         instances.clear();
         OverlayerData data = OverlayerDataManager.load();
         instances.addAll(data.getImageInstances());
+        Config.setTitleScreenBtnXOffset(data.getTitleScreenBtnXOffset());
+        Config.setTitleScreenBtnYOffset(data.getTitleScreenBtnYOffset());
+        Config.setOptionsScreenBtnXOffset(data.getOptionsScreenBtnXOffset());
+        Config.setOptionsScreenBtnYOffset(data.getOptionsScreenBtnYOffset());
     }
 
     public void save() {
         OverlayerData data = new OverlayerData();
         data.setImageInstances(new ArrayList<>(instances));
+        data.setTitleScreenBtnXOffset(Config.getTitleScreenBtnXOffset());
+        data.setTitleScreenBtnYOffset(Config.getTitleScreenBtnYOffset());
+        data.setOptionsScreenBtnXOffset(Config.getOptionsScreenBtnXOffset());
+        data.setOptionsScreenBtnYOffset(Config.getOptionsScreenBtnYOffset());
         OverlayerDataManager.save(data);
     }
 
