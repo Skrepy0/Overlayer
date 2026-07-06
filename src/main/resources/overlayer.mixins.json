@@ -11,7 +11,10 @@
     "requireAnnotations": true
   },
   "client": [
+    "HandledScreenMixin",
+    "InGameHudMixin",
     "OptionsScreenMixin",
+    "ScreenMixin",
     "TitleScreenMixin"
   ]
 }
