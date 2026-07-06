@@ -16,7 +16,7 @@ public class HandledScreenMixin {
 
     @Inject(method = "render", at = @At("RETURN"))
     private void onRender(DrawContext drawContext, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
-        if (Config.getIsOpenContainerScreen()) {
+        if (!Config.getIsOpenContainerScreen()) {
             Config.setIsOpenContainerScreen(true);
         }
         OverlayRenderer.renderOverlays(drawContext, partialTick);

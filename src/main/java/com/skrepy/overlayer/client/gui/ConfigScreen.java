@@ -91,6 +91,11 @@ public class ConfigScreen extends Screen {
         }
     }
 
+    @Override
+    public boolean shouldPause() {
+        return true;
+    }
+
     public int getValue(int index) {
         if (index < 0 || index >= inputFields.length) return 0;
         try {
