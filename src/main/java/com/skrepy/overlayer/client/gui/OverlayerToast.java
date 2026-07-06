@@ -1,5 +1,7 @@
 package com.skrepy.overlayer.client.gui;
 
+import org.jetbrains.annotations.NotNull;
+
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -7,14 +9,11 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.toast.Toast;
 import net.minecraft.client.toast.ToastManager;
 import net.minecraft.text.Text;
-import org.jetbrains.annotations.NotNull;
 
 @Environment(EnvType.CLIENT)
 public class OverlayerToast implements Toast {
     public enum Type {
-        INFO(0xFF2A7FFF, 0xFFFFFFFF, 0xFF01001F, "ℹ"),
-        WARNING(0xFFFF8C00, 0xFFFFFFFF, 0xFF01001F, "⚠"),
-        ERROR(0xFFFF1744, 0xFFFFFFFF, 0xFF01001F, "✕");
+        INFO(0xFF2A7FFF, 0xFFFFFFFF, 0xFF01001F, "ℹ"), WARNING(0xFFFF8C00, 0xFFFFFFFF, 0xFF01001F, "⚠"), ERROR(0xFFFF1744, 0xFFFFFFFF, 0xFF01001F, "✕");
 
         final int borderColor;
         final int textColor;
