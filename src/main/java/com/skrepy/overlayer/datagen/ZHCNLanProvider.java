@@ -47,6 +47,7 @@ public class ZHCNLanProvider extends LanguageProvider {
         add("overlayer.screen.image_edit.label.layer", "图层:");
         add("overlayer.screen.image_edit.slide.zoom", "缩放: ");
         add("overlayer.screen.image_edit.slide.alpha", "透明度: ");
+        add("overlayer.screen.image_edit.slide.rotation", "旋转: ");
 
         add("overlayer.toast.warning.unsupported_format.title", "不支持的格式");
         add("overlayer.toast.warning.unsupported_format.meg", "Overlayer暂不支持%s格式");

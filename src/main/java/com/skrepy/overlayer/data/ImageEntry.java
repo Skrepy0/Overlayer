@@ -34,6 +34,7 @@ public class ImageEntry {
     private String path;
     private int xOffset;
     private int yOffset;
+    private int rotation;
     private String displayMode;
     private double scale;
     private double alpha;
@@ -108,6 +109,14 @@ public class ImageEntry {
         this.yOffset = yOffset;
     }
 
+    public int getRotation() {
+        return rotation;
+    }
+
+    public void setRotation(int rotation) {
+        this.rotation = rotation;
+    }
+
     public String getDisplayMode() {
         return displayMode;
     }
@@ -170,6 +179,7 @@ public class ImageEntry {
     // ---------- 纹理加载 ----------
     @Nullable
     public synchronized ResourceLocation getCurrentFrame(TextureManager textureManager, float partialTick) {
+        // partialTick is intentionally unused: static images don't need it, GIF uses system time.
         if (isGif && !gifLoaded) {
             if (!gifLoading) {
                 loadGif(textureManager);
@@ -290,7 +300,7 @@ public class ImageEntry {
             if (nodes.getLength() > 0) {
                 IIOMetadataNode node = (IIOMetadataNode) nodes.item(0);
                 String delayStr = node.getAttribute("delayTime");
-                if (delayStr != null && !delayStr.isEmpty()) {
+                if (!delayStr.isEmpty()) {
                     int delay = Integer.parseInt(delayStr);
                     // delayTime 单位是 1/100 秒，转换为毫秒
                     return delay * 10;
@@ -339,7 +349,7 @@ public class ImageEntry {
     @Nullable
     private ResourceLocation getCurrentGifFrame() {
         if (gifTextures == null || gifTextures.isEmpty()) return null;
-        if (gifTotalDelay == 0) return gifTextures.get(0);
+        if (gifTotalDelay == 0) return gifTextures.getFirst();
 
         long elapsed = System.currentTimeMillis() - gifStartTime;
         int cycleTime = (int) (elapsed % gifTotalDelay);
@@ -350,7 +360,7 @@ public class ImageEntry {
                 return gifTextures.get(i);
             }
         }
-        return gifTextures.get(0);
+        return gifTextures.getFirst();
     }
 
     // ---------- 静态图片加载 ----------

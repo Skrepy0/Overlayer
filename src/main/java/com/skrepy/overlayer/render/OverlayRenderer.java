@@ -66,9 +66,11 @@ public class OverlayRenderer {
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
             guiGraphics.setColor(1.0f, 1.0f, 1.0f, alpha);
-            guiGraphics.blit(
-                    texture, centerX - drawWidth / 2, centerY - drawHeight / 2, 0, 0, drawWidth, drawHeight, drawWidth, drawHeight
-            );
+            guiGraphics.pose().pushPose();
+            guiGraphics.pose().translate(centerX, centerY, 0);
+            guiGraphics.pose().mulPose(com.mojang.math.Axis.ZP.rotationDegrees(entry.getRotation()));
+            guiGraphics.blit(texture, -drawWidth / 2, -drawHeight / 2, 0, 0, drawWidth, drawHeight, drawWidth, drawHeight);
+            guiGraphics.pose().popPose();
             guiGraphics.setColor(1.0f, 1.0f, 1.0f, 1.0f);
             RenderSystem.disableBlend();
         }

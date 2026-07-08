@@ -23,6 +23,7 @@
   "overlayer.screen.image_edit.label.layer": "Layer:",
   "overlayer.screen.image_edit.label.preview": "Preview",
   "overlayer.screen.image_edit.slide.alpha": "Opacity: ",
+  "overlayer.screen.image_edit.slide.rotation": "Rotation: ",
   "overlayer.screen.image_edit.slide.zoom": "Zoom: ",
   "overlayer.screen.image_edit.title": "Edit Image Instance",
   "overlayer.screen.settings_page.button.add": "Add",

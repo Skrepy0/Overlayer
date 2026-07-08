@@ -51,6 +51,7 @@ public class ImageEditScreen extends Screen {
     private Button browseButton;
     private ExtendedSlider xSlider;
     private ExtendedSlider ySlider;
+    private ExtendedSlider rotationSlider;
     private ExtendedSlider scaleSlider;
     private ExtendedSlider alphaSlider;
     private EditBox layerInput;
@@ -158,6 +159,10 @@ public class ImageEditScreen extends Screen {
         this.addRenderableWidget(this.ySlider);
 
         sliderY += 20 + spacing;
+        this.rotationSlider = new RotationSlider(rightStartX + rightMargin, sliderY, sliderWidth, 20, Component.translatable("overlayer.screen.image_edit.slide.rotation"), Component.literal("°"), -360, 360, entry.getRotation(), 1, 0, true);
+        this.addRenderableWidget(this.rotationSlider);
+
+        sliderY += 20 + spacing;
         this.scaleSlider = new ScaleSlider(rightStartX + rightMargin, sliderY, sliderWidth, 20, Component.translatable("overlayer.screen.image_edit.slide.zoom"), Component.literal(""), 1, 300, (int) (entry.getScale() * 100), 1, 0, false);
         this.addRenderableWidget(this.scaleSlider);
 
@@ -167,7 +172,6 @@ public class ImageEditScreen extends Screen {
 
         // 3) 图层标签
         sliderY += 20 + spacing + 4;
-        int rowWidth = sliderWidth;
         StringWidget layerLabel = new StringWidget(Component.translatable("overlayer.screen.image_edit.label.layer"), this.font);
         layerLabel.setX(rightStartX + rightMargin);
         layerLabel.setY(sliderY + 2);
@@ -175,7 +179,7 @@ public class ImageEditScreen extends Screen {
 
         // 4) 图层输入框
         sliderY += 20 + spacing;
-        this.layerInput = new EditBox(this.font, rightStartX + rightMargin, sliderY, rowWidth, 20, Component.literal("图层"));
+        this.layerInput = new EditBox(this.font, rightStartX + rightMargin, sliderY, sliderWidth, 20, Component.literal("图层"));
         this.layerInput.setValue(String.valueOf(entry.getLayer()));
         this.layerInput.setFilter(s -> s.matches("\\d*"));
         this.layerInput.setMaxLength(6);
@@ -193,7 +197,7 @@ public class ImageEditScreen extends Screen {
 
         // 5) 模式按钮
         sliderY += 20 + spacing;
-        this.modeButton = Button.builder(Component.translatable("overlayer.screen.image_edit.button.mode").append(MODES[modeIndex]), (btn) -> this.cycleMode()).pos(rightStartX + rightMargin, sliderY).size(rowWidth, 20).build();
+        this.modeButton = Button.builder(Component.translatable("overlayer.screen.image_edit.button.mode").append(MODES[modeIndex]), (btn) -> this.cycleMode()).pos(rightStartX + rightMargin, sliderY).size(sliderWidth, 20).build();
         this.addRenderableWidget(this.modeButton);
 
         // 6) 底部按钮
@@ -415,6 +419,17 @@ public class ImageEditScreen extends Screen {
         @Override
         protected void applyValue() {
             entry.setYOffset((int) this.getValue());
+        }
+    }
+
+    private class RotationSlider extends ExtendedSlider {
+        public RotationSlider(int x, int y, int width, int height, Component prefix, Component suffix, int minValue, int maxValue, int currentValue, int stepSize, int precision, boolean drawString) {
+            super(x, y, width, height, prefix, suffix, minValue, maxValue, currentValue, stepSize, precision, drawString);
+        }
+
+        @Override
+        protected void applyValue() {
+            entry.setRotation((int) this.getValue());
         }
     }
 

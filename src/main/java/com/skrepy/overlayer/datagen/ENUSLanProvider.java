@@ -46,6 +46,7 @@ public class ENUSLanProvider extends LanguageProvider {
         add("overlayer.screen.image_edit.label.layer", "Layer:");
         add("overlayer.screen.image_edit.slide.zoom", "Zoom: ");
         add("overlayer.screen.image_edit.slide.alpha", "Opacity: ");
+        add("overlayer.screen.image_edit.slide.rotation", "Rotation: ");
 
         add("overlayer.toast.warning.unsupported_format.title", "Unsupported Format");
         add("overlayer.toast.warning.unsupported_format.meg", "Overlayer does not currently support the %s format.");
