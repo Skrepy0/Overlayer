@@ -33,6 +33,7 @@ public class ImageEntry {
     private String path;
     private int xOffset;
     private int yOffset;
+    private int rotation;
     private String displayMode;
     private double scale;
     private double alpha;
@@ -105,6 +106,14 @@ public class ImageEntry {
 
     public void setYOffset(int yOffset) {
         this.yOffset = yOffset;
+    }
+
+    public int getRotation() {
+        return rotation;
+    }
+
+    public void setRotation(int rotation) {
+        this.rotation = rotation;
     }
 
     public String getDisplayMode() {

@@ -52,6 +52,7 @@ public class ImageEditScreen extends Screen {
     private ButtonWidget browseButton;
     private XSlider xSlider;        // 改为具体子类类型
     private YSlider ySlider;
+    private RotationSlider rotationSlider;
     private ScaleSlider scaleSlider;
     private AlphaSlider alphaSlider;
     private TextFieldWidget layerInput;
@@ -162,6 +163,10 @@ public class ImageEditScreen extends Screen {
         this.addDrawableChild(this.ySlider);
 
         sliderY += 20 + spacing;
+        this.rotationSlider = new RotationSlider(rightStartX + rightMargin, sliderY, sliderWidth, 20, Text.translatable("overlayer.screen.image_edit.slide.rotation"), Text.literal("°"), -360, 360, entry.getRotation());
+        this.addDrawableChild(this.rotationSlider);
+
+        sliderY += 20 + spacing;
         this.scaleSlider = new ScaleSlider(rightStartX + rightMargin, sliderY, sliderWidth, 20, Text.translatable("overlayer.screen.image_edit.slide.zoom"), Text.literal(""), 1, 300, (int) (entry.getScale() * 100));
         this.addDrawableChild(this.scaleSlider);
 
@@ -171,7 +176,6 @@ public class ImageEditScreen extends Screen {
 
         // 3) 图层标签
         sliderY += 20 + spacing + 4;
-        int rowWidth = sliderWidth;
         TextWidget layerLabel = new TextWidget(Text.translatable("overlayer.screen.image_edit.label.layer"), this.textRenderer);
         layerLabel.setX(rightStartX + rightMargin);
         layerLabel.setY(sliderY + 2);
@@ -179,7 +183,7 @@ public class ImageEditScreen extends Screen {
 
         // 4) 图层输入框
         sliderY += 20 + spacing;
-        this.layerInput = new TextFieldWidget(this.textRenderer, rightStartX + rightMargin, sliderY, rowWidth, 20, Text.literal("图层"));
+        this.layerInput = new TextFieldWidget(this.textRenderer, rightStartX + rightMargin, sliderY, sliderWidth, 20, Text.literal("图层"));
         this.layerInput.setText(String.valueOf(entry.getLayer()));
         // 修正: setFilter 改为 setTextPredicate
         this.layerInput.setTextPredicate(s -> s.matches("\\d*"));
@@ -200,7 +204,7 @@ public class ImageEditScreen extends Screen {
         sliderY += 20 + spacing;
         this.modeButton = ButtonWidget.builder(
                 Text.translatable("overlayer.screen.image_edit.button.mode").append(MODES[modeIndex]), (btn) -> this.cycleMode()
-        ).position(rightStartX + rightMargin, sliderY).size(rowWidth, 20).build();
+        ).position(rightStartX + rightMargin, sliderY).size(sliderWidth, 20).build();
         this.addDrawableChild(this.modeButton);
 
         // 6) 底部按钮
@@ -318,6 +322,7 @@ public class ImageEditScreen extends Screen {
 
         entry.setXOffset((int) this.xSlider.getValue());
         entry.setYOffset((int) this.ySlider.getValue());
+        entry.setRotation((int) this.rotationSlider.getValue());
         entry.setScale(this.scaleSlider.getValue() / 100.0);
         entry.setAlpha(this.alphaSlider.getValue() / 100.0);
 
@@ -403,8 +408,8 @@ public class ImageEditScreen extends Screen {
         }
     }
 
-    // ========== 自定义滑块内部类（使用原版 SliderWidget） ==========
-    private abstract class AbstractCustomSlider extends SliderWidget {
+    // ========== 自定义滑块内部类 ==========
+    private abstract static class AbstractCustomSlider extends SliderWidget {
         protected final Text prefix;
         protected final Text suffix;
         protected final int min;
@@ -417,7 +422,7 @@ public class ImageEditScreen extends Screen {
             this.suffix = suffix;
             this.min = min;
             this.max = max;
-            this.format = new DecimalFormat("0.00");
+            this.format = new DecimalFormat("0");
             // 计算初始 value (0~1)
             this.value = (currentValue - min) / (double) (max - min);
             updateMessage();
@@ -428,11 +433,10 @@ public class ImageEditScreen extends Screen {
 
         @Override
         protected void updateMessage() {
-            double val = getValue();
+            int val = (int) getValue();
             setMessage(Text.literal(prefix.getString() + format.format(val) + suffix.getString()));
         }
 
-        // 改为 public 以便外部调用
         public double getValue() {
             return min + (max - min) * this.value;
         }
@@ -452,7 +456,6 @@ public class ImageEditScreen extends Screen {
         @Override
         protected void applyValue() {
             entry.setXOffset((int) getValue());
-            isChanged = true;
         }
     }
 
@@ -466,7 +469,19 @@ public class ImageEditScreen extends Screen {
         @Override
         protected void applyValue() {
             entry.setYOffset((int) getValue());
-            isChanged = true;
+        }
+    }
+
+    private class RotationSlider extends AbstractCustomSlider {
+        public RotationSlider(int x, int y, int width, int height, Text prefix, Text suffix, int min, int max, int currentValue) {
+            super(x, y, width, height, prefix, suffix, min, max, currentValue);
+            this.value = (currentValue - min) / (double) (max - min);
+            updateMessage();
+        }
+
+        @Override
+        protected void applyValue() {
+            entry.setRotation((int) getValue());
         }
     }
 
@@ -480,7 +495,6 @@ public class ImageEditScreen extends Screen {
         @Override
         protected void applyValue() {
             entry.setScale(getValue() / 100.0);
-            isChanged = true;
         }
 
         @Override
@@ -500,7 +514,6 @@ public class ImageEditScreen extends Screen {
         @Override
         protected void applyValue() {
             entry.setAlpha(getValue() / 100.0);
-            isChanged = true;
         }
 
         @Override

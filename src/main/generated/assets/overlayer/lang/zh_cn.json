@@ -24,6 +24,7 @@
   "overlayer.screen.image_edit.label.layer": "图层:",
   "overlayer.screen.image_edit.label.preview": "预览",
   "overlayer.screen.image_edit.slide.alpha": "透明度: ",
+  "overlayer.screen.image_edit.slide.rotation": "旋转: ",
   "overlayer.screen.image_edit.slide.zoom": "缩放: ",
   "overlayer.screen.image_edit.title": "编辑图片实例",
   "overlayer.screen.settings_page.button.add": "添加",

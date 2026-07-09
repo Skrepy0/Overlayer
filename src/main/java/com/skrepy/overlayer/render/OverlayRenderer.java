@@ -3,7 +3,6 @@ package com.skrepy.overlayer.render;
 import java.util.Comparator;
 import java.util.List;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.skrepy.overlayer.Overlayer;
 import com.skrepy.overlayer.data.ImageEntry;
 import com.skrepy.overlayer.manager.OverlayerManager;
@@ -12,8 +11,10 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.texture.TextureManager;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.ColorHelper;
+import net.minecraft.util.math.RotationAxis;
 
 public class OverlayRenderer {
 
@@ -64,9 +65,13 @@ public class OverlayRenderer {
             int centerY = screenHeight / 2 + offsetY;
 
             float alpha = (float) entry.getAlpha();
-
             int color = ColorHelper.getArgb((int) (alpha * 255), 255, 255, 255);
-            drawContext.drawTexture(RenderLayer::getGuiTextured, texture, centerX - drawWidth / 2, centerY - drawHeight / 2, 0.0f, 0.0f, drawWidth, drawHeight, drawWidth, drawHeight, color);
+            MatrixStack matrices = drawContext.getMatrices();
+            matrices.push();
+            matrices.translate(centerX, centerY, 0);
+            matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(entry.getRotation()));
+            drawContext.drawTexture(RenderLayer::getGuiTextured, texture, -drawWidth / 2, -drawHeight / 2, 0.0f, 0.0f, drawWidth, drawHeight, drawWidth, drawHeight, color);
+            matrices.pop();
         }
     }
 }
