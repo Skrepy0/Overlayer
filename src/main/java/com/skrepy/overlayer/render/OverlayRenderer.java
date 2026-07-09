@@ -10,8 +10,10 @@ import com.skrepy.overlayer.manager.OverlayerManager;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.texture.TextureManager;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.ColorHelper;
 
 public class OverlayRenderer {
 
@@ -63,12 +65,8 @@ public class OverlayRenderer {
 
             float alpha = (float) entry.getAlpha();
 
-            RenderSystem.enableBlend();
-            RenderSystem.defaultBlendFunc();
-            drawContext.setShaderColor(1.0f, 1.0f, 1.0f, alpha);
-            drawContext.drawTexture(texture, centerX - drawWidth / 2, centerY - drawHeight / 2, 0, 0, drawWidth, drawHeight, drawWidth, drawHeight);
-            drawContext.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
-            RenderSystem.disableBlend();
+            int color = ColorHelper.getArgb((int) (alpha * 255), 255, 255, 255);
+            drawContext.drawTexture(RenderLayer::getGuiTextured, texture, centerX - drawWidth / 2, centerY - drawHeight / 2, 0.0f, 0.0f, drawWidth, drawHeight, drawWidth, drawHeight, color);
         }
     }
 }

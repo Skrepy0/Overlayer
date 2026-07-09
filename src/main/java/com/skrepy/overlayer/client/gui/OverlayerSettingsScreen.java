@@ -105,12 +105,6 @@ public class OverlayerSettingsScreen extends Screen {
         }
     }
 
-    @Override
-    protected void initTabNavigation() {
-        super.initTabNavigation();
-        this.updateLayout();
-    }
-
     private void updateLayout() {
         this.titleWidget.setX(this.width / 2 - this.textRenderer.getWidth(TITLE) / 2);
         this.titleWidget.setY(titleY);

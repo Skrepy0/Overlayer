@@ -31,6 +31,7 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.SliderWidget;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.gui.widget.TextWidget;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.screen.ScreenTexts;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
@@ -248,7 +249,7 @@ public class ImageEditScreen extends Screen {
             int drawX = previewX + (previewSize - drawWidth) / 2;
             int drawY = previewY + (previewSize - drawHeight) / 2;
 
-            context.drawTexture(texture, drawX, drawY, 0, 0, drawWidth, drawHeight, drawWidth, drawHeight);
+            context.drawTexture(RenderLayer::getGuiTextured, texture, drawX, drawY, 0.0f, 0.0f, drawWidth, drawHeight, drawWidth, drawHeight);
         } else {
             context.fill(previewX, previewY, previewX + previewSize, previewY + previewSize, 0xFF888888);
             String message;

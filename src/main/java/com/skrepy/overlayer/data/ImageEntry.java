@@ -234,7 +234,7 @@ public class ImageEntry {
                     if (delay <= 0) delay = 100;
 
                     NativeImage nativeImage = convertToNativeImage(frame);
-                    NativeImageBackedTexture texture = new NativeImageBackedTexture(nativeImage);
+                    NativeImageBackedTexture texture = new NativeImageBackedTexture(() -> "overlayer_texture", nativeImage);
                     Identifier location = Identifier.of("overlayer", "gif/" + UUID.randomUUID());
                     textureManager.registerTexture(location, texture);
                     textures.add(location);
@@ -361,7 +361,7 @@ public class ImageEntry {
             originalHeight = image.getHeight();
 
             NativeImage nativeImage = convertToNativeImage(image);
-            NativeImageBackedTexture texture = new NativeImageBackedTexture(nativeImage);
+            NativeImageBackedTexture texture = new NativeImageBackedTexture(() -> "overlayer_texture", nativeImage);
             Identifier location = Identifier.of("overlayer", "img/" + UUID.randomUUID());
             textureManager.registerTexture(location, texture);
             staticTexture = location;
@@ -403,7 +403,7 @@ public class ImageEntry {
             g.dispose();
 
             NativeImage nativeImage = convertToNativeImage(scaled);
-            NativeImageBackedTexture texture = new NativeImageBackedTexture(nativeImage);
+            NativeImageBackedTexture texture = new NativeImageBackedTexture(() -> "overlayer_texture", nativeImage);
             Identifier location = Identifier.of("overlayer", "thumb/" + UUID.randomUUID());
             textureManager.registerTexture(location, texture);
             thumbnailTexture = location;

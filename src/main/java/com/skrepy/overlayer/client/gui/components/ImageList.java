@@ -15,6 +15,7 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
 import net.minecraft.client.gui.screen.narration.NarrationPart;
 import net.minecraft.client.gui.widget.EntryListWidget;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
@@ -101,7 +102,7 @@ public class ImageList extends EntryListWidget<ImageList.Entry> {
             int thumbSize = entryHeight - 4;
             Identifier tex = imageEntry.getThumbnail(MinecraftClient.getInstance().getTextureManager());
             if (tex != null) {
-                context.drawTexture(tex, thumbX, thumbY, 0, 0, thumbSize, thumbSize, thumbSize, thumbSize);
+                context.drawTexture(RenderLayer::getGuiTextured, tex, thumbX, thumbY, 0.0f, 0.0f, thumbSize, thumbSize, thumbSize, thumbSize);
             } else {
                 context.fill(thumbX, thumbY, thumbX + thumbSize, thumbY + thumbSize, 0xFF888888);
                 context.drawText(font, "?", thumbX + thumbSize / 2 - 4, thumbY + thumbSize / 2 - 4, 0xFFFFFF, false);

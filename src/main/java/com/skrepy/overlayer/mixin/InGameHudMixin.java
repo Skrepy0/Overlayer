@@ -17,7 +17,7 @@ public class InGameHudMixin {
     @Inject(method = "render", at = @At("RETURN"))
     private void onRender(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
         if (!Config.getIsOpenContainerScreen()) {
-            float partialTick = tickCounter.getTickDelta(false);
+            float partialTick = tickCounter.getTickProgress(false);
             OverlayRenderer.renderOverlays(context, partialTick);
         }
     }
