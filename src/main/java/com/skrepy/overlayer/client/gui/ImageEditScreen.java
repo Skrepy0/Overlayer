@@ -168,7 +168,6 @@ public class ImageEditScreen extends Screen {
 
         // 3) 图层标签
         sliderY += 20 + spacing + 4;
-        int rowWidth = sliderWidth;
         TextWidget layerLabel = new TextWidget(Text.translatable("overlayer.screen.image_edit.label.layer"), this.textRenderer);
         layerLabel.setX(rightStartX + rightMargin);
         layerLabel.setY(sliderY + 2);
@@ -176,7 +175,7 @@ public class ImageEditScreen extends Screen {
 
         // 4) 图层输入框
         sliderY += 20 + spacing;
-        this.layerInput = new TextFieldWidget(this.textRenderer, rightStartX + rightMargin, sliderY, rowWidth, 20, Text.literal("图层"));
+        this.layerInput = new TextFieldWidget(this.textRenderer, rightStartX + rightMargin, sliderY, sliderWidth, 20, Text.literal("图层"));
         this.layerInput.setText(String.valueOf(entry.getLayer()));
 
         this.layerInput.setTextPredicate(s -> s.matches("\\d*"));
@@ -197,7 +196,7 @@ public class ImageEditScreen extends Screen {
         sliderY += 20 + spacing;
         this.modeButton = ButtonWidget.builder(
                 Text.translatable("overlayer.screen.image_edit.button.mode").append(MODES[modeIndex]), (btn) -> this.cycleMode()
-        ).position(rightStartX + rightMargin, sliderY).size(rowWidth, 20).build();
+        ).position(rightStartX + rightMargin, sliderY).size(sliderWidth, 20).build();
         this.addDrawableChild(this.modeButton);
 
         // 6) 底部按钮
@@ -314,6 +313,7 @@ public class ImageEditScreen extends Screen {
 
         entry.setXOffset((int) this.xSlider.getValue());
         entry.setYOffset((int) this.ySlider.getValue());
+        entry.setRotation((int) this.rotationSlider.getValue());
         entry.setScale(this.scaleSlider.getValue() / 100.0);
         entry.setAlpha(this.alphaSlider.getValue() / 100.0);
 
