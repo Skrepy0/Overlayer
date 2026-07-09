@@ -33,6 +33,7 @@ public class ImageEntry {
     private String path;
     private int xOffset;
     private int yOffset;
+    private int rotation;
     private String displayMode;
     private double scale;
     private double alpha;
@@ -60,14 +61,15 @@ public class ImageEntry {
     private transient volatile boolean thumbnailFailed = false;
 
     public ImageEntry(int id, String path) {
-        this(id, path, 0, 0, "disabled", 1.0, 1.0, 0);
+        this(id, path, 0, 0, 0, "disabled", 1.0, 1.0, 0);
     }
 
-    public ImageEntry(int id, String path, int xOffset, int yOffset, String displayMode, double scale, double alpha, int layer) {
+    public ImageEntry(int id, String path, int xOffset, int yOffset, int rotation, String displayMode, double scale, double alpha, int layer) {
         this.id = id;
         this.path = path;
         this.xOffset = xOffset;
         this.yOffset = yOffset;
+        this.rotation = rotation;
         this.displayMode = displayMode;
         this.scale = scale;
         this.alpha = alpha;
@@ -105,6 +107,14 @@ public class ImageEntry {
 
     public void setYOffset(int yOffset) {
         this.yOffset = yOffset;
+    }
+
+    public int getRotation() {
+        return rotation;
+    }
+
+    public void setRotation(int rotation) {
+        this.rotation = rotation;
     }
 
     public String getDisplayMode() {

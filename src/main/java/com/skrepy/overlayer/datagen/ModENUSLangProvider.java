@@ -49,6 +49,8 @@ public class ModENUSLangProvider extends FabricLanguageProvider {
         translationBuilder.add("overlayer.screen.image_edit.label.layer", "Layer:");
         translationBuilder.add("overlayer.screen.image_edit.slide.zoom", "Zoom: ");
         translationBuilder.add("overlayer.screen.image_edit.slide.alpha", "Opacity: ");
+        translationBuilder.add("overlayer.screen.image_edit.slide.rotation", "Rotation: ");
+
 
         translationBuilder.add("overlayer.toast.warning.unsupported_format.title", "Unsupported Format");
         translationBuilder.add("overlayer.toast.warning.unsupported_format.meg", "Overlayer does not currently support the %s format.");

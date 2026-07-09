@@ -11,7 +11,9 @@ import com.skrepy.overlayer.manager.OverlayerManager;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.texture.TextureManager;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.RotationAxis;
 
 public class OverlayRenderer {
 
@@ -66,7 +68,12 @@ public class OverlayRenderer {
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
             drawContext.setShaderColor(1.0f, 1.0f, 1.0f, alpha);
-            drawContext.drawTexture(texture, centerX - drawWidth / 2, centerY - drawHeight / 2, 0, 0, drawWidth, drawHeight, drawWidth, drawHeight);
+            MatrixStack matrices = drawContext.getMatrices();
+            matrices.push();
+            matrices.translate(centerX, centerY, 0);
+            matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(entry.getRotation()));
+            drawContext.drawTexture(texture, -drawWidth / 2, -drawHeight / 2, 0, 0, drawWidth, drawHeight, drawWidth, drawHeight);
+            matrices.pop();
             drawContext.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
             RenderSystem.disableBlend();
         }

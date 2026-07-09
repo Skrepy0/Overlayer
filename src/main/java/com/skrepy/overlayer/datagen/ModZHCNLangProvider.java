@@ -48,6 +48,7 @@ public class ModZHCNLangProvider extends FabricLanguageProvider {
         translationBuilder.add("overlayer.screen.image_edit.label.layer", "图层:");
         translationBuilder.add("overlayer.screen.image_edit.slide.zoom", "缩放: ");
         translationBuilder.add("overlayer.screen.image_edit.slide.alpha", "透明度: ");
+        translationBuilder.add("overlayer.screen.image_edit.slide.rotation", "旋转: ");
 
         translationBuilder.add("overlayer.toast.warning.unsupported_format.title", "不支持的格式");
         translationBuilder.add("overlayer.toast.warning.unsupported_format.meg", "Overlayer暂不支持%s格式");
