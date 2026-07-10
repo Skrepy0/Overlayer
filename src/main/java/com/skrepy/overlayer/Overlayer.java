@@ -1,5 +1,6 @@
 package com.skrepy.overlayer;
 
+import java.nio.file.Path;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -15,6 +16,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 
@@ -22,6 +24,7 @@ import net.neoforged.neoforge.event.server.ServerStartingEvent;
 public class Overlayer {
     public static final String MOD_ID = "overlayer";
     public static final Logger LOGGER = LogUtils.getLogger();
+    public static Path GAME_DIR;
     public static final List<String> validFormat = List.of("png", "jpg", "jpeg", "bmp", "gif");
 
     public Overlayer(IEventBus modEventBus, ModContainer modContainer) {
@@ -29,6 +32,8 @@ public class Overlayer {
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::onClientSetup);
         modEventBus.addListener(this::addCreative);
+        GAME_DIR = FMLPaths.GAMEDIR.get();
+        LOGGER.info("GAME_DIR:{}", GAME_DIR);
         OverlayerManager.getInstance().load();
     }
 

@@ -213,7 +213,7 @@ public class ImageEditScreen extends Screen {
         this.cancelButton = Button.builder(CANCEL, (btn) -> this.cancel()).pos(btnStartX + btnWidth + btnSpacing, buttonY).size(btnWidth, 20).build();
         this.addRenderableWidget(this.cancelButton);
 
-        loadPreviewDimension(entry.getPath());
+        loadPreviewDimension(entry.getAbsolutePath().toString());
         isChanged = false;
     }
 
@@ -344,6 +344,8 @@ public class ImageEditScreen extends Screen {
             this.minecraft.setScreen(new ConfirmScreen(confirmed -> {
                 if (confirmed) {
                     this.minecraft.setScreen(lastScreen);
+                } else {
+                    this.minecraft.setScreen(this);
                 }
             }, Component.translatable("overlayer.screen.unsaved.title"), Component.translatable("overlayer.screen.unsaved.meg"), CommonComponents.GUI_YES, CommonComponents.GUI_NO));
         } else {

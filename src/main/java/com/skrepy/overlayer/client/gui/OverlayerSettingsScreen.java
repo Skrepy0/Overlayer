@@ -65,7 +65,7 @@ public class OverlayerSettingsScreen extends Screen {
         this.addRenderableWidget(this.titleWidget);
 
         inputY = titleY + 30;
-        this.pathInput = new EditBox(this.font, this.width / 2 - 110, inputY, 200, 20, Component.literal("输入图片路径"));
+        this.pathInput = new EditBox(this.font, this.width / 2 - 110, inputY, 200, 20, Component.literal("Image path"));
         this.pathInput.setMaxLength(Integer.MAX_VALUE);
         this.addRenderableWidget(this.pathInput);
 

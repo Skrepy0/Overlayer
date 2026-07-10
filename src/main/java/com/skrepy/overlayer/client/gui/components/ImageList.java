@@ -93,7 +93,7 @@ public class ImageList extends ObjectSelectionList<ImageList.Entry> {
             }
 
             // 路径
-            String pathStr = imageEntry.getPath();
+            String pathStr = imageEntry.getAbsolutePath().toString();
             int maxPathWidth = width - 30 - thumbSize - 10 - DELETE_BUTTON_WIDTH - DELETE_BUTTON_PADDING * 2 - 4;
             String display = font.plainSubstrByWidth(pathStr, maxPathWidth);
             guiGraphics.drawString(font, display, left + 30 + thumbSize + 6, top + (height - 8) / 2, 0xAAAAAA);
