@@ -1,8 +1,25 @@
 package com.skrepy.overlayer.client.gui;
 
-import static com.skrepy.overlayer.Overlayer.validFormat;
-import static com.skrepy.overlayer.manager.OverlayerManager.*;
+import com.skrepy.overlayer.Overlayer;
+import com.skrepy.overlayer.data.ImageEntry;
+import com.skrepy.overlayer.manager.OverlayerManager;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.tooltip.Tooltip;
+import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.SliderWidget;
+import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.client.gui.widget.TextWidget;
+import net.minecraft.client.render.RenderLayer;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
+import org.jetbrains.annotations.NotNull;
+import org.lwjgl.system.MemoryStack;
 
+import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
@@ -12,41 +29,20 @@ import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.function.Consumer;
 
-import javax.imageio.ImageIO;
-
-import org.jetbrains.annotations.NotNull;
-import org.lwjgl.system.MemoryStack;
-
-import com.skrepy.overlayer.Overlayer;
-import com.skrepy.overlayer.data.ImageEntry;
-import com.skrepy.overlayer.manager.OverlayerManager;
-
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ConfirmScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.tooltip.Tooltip;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.SliderWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.client.gui.widget.TextWidget;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.screen.ScreenTexts;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import static com.skrepy.overlayer.Overlayer.validFormat;
+import static com.skrepy.overlayer.manager.OverlayerManager.*;
+import static net.minecraft.screen.ScreenTexts.DONE;
 
 @Environment(EnvType.CLIENT)
 public class ImageEditScreen extends Screen {
     private static final Text TITLE = Text.translatable("overlayer.screen.image_edit.title");
-    private static final Text SAVE = Text.translatable("overlayer.screen.common.save");
-    private static final Text CANCEL = Text.translatable("overlayer.screen.common.cancel");
-
+    private static final MutableText[] MODES = {Text.translatable("overlayer.screen.image_edit.button.mode.always"), Text.translatable("overlayer.screen.image_edit.button.mode.ingame"), Text.translatable("overlayer.screen.image_edit.button.mode.not_ingame"), Text.translatable("overlayer.screen.image_edit.button.mode.disable")
+    };
+    private static final String[] MODE_VALUES = {"always", "ingame", "not_ingame", "disabled"};
     private final Screen lastScreen;
     private final ImageEntry entry;
     private final Consumer<ImageEntry> onSave;
-
+    private final DecimalFormat df = new DecimalFormat("0.00");
     // 控件
     private TextFieldWidget pathInput;
     private ButtonWidget browseButton;
@@ -57,26 +53,15 @@ public class ImageEditScreen extends Screen {
     private AlphaSlider alphaSlider;
     private TextFieldWidget layerInput;
     private ButtonWidget modeButton;
-    private ButtonWidget saveButton;
-    private ButtonWidget cancelButton;
-
+    private ButtonWidget doneButton;
     private int modeIndex = 0;
-    private static final MutableText[] MODES = {Text.translatable("overlayer.screen.image_edit.button.mode.always"), Text.translatable("overlayer.screen.image_edit.button.mode.ingame"), Text.translatable("overlayer.screen.image_edit.button.mode.not_ingame"), Text.translatable("overlayer.screen.image_edit.button.mode.disable")
-    };
-    private static final String[] MODE_VALUES = {"always", "ingame", "not_ingame", "disabled"};
-
     // 预览相关
     private int previewSize = 150;
     private int previewX, previewY;
-
     // 缓存预览图片尺寸和文件状态
     private String currentPreviewPath = null;
     private Dimension currentPreviewDimension = null;
     private boolean previewFileExists = true;
-
-    private boolean isChanged;
-
-    private final DecimalFormat df = new DecimalFormat("0.00");
 
     public ImageEditScreen(Screen lastScreen, ImageEntry entry, Consumer<ImageEntry> onSave) {
         super(TITLE);
@@ -90,7 +75,6 @@ public class ImageEditScreen extends Screen {
                 break;
             }
         }
-        isChanged = false;
     }
 
     @Override
@@ -139,11 +123,6 @@ public class ImageEditScreen extends Screen {
         this.pathInput = new TextFieldWidget(this.textRenderer, rightStartX + rightMargin, startY, pathWidth, 20, Text.literal("图片路径"));
         this.pathInput.setMaxLength(Integer.MAX_VALUE);
         this.pathInput.setText(entry.getPath());
-        this.pathInput.setChangedListener(s -> {
-            if (!s.equals(entry.getPath())) {
-                isChanged = true;
-            }
-        });
         this.addDrawableChild(this.pathInput);
 
         this.browseButton = ButtonWidget.builder(
@@ -188,16 +167,6 @@ public class ImageEditScreen extends Screen {
         // 修正: setFilter 改为 setTextPredicate
         this.layerInput.setTextPredicate(s -> s.matches("\\d*"));
         this.layerInput.setMaxLength(6);
-        this.layerInput.setChangedListener(s -> {
-            try {
-                int newLayer = Integer.parseInt(s.trim());
-                if (newLayer != entry.getLayer()) {
-                    isChanged = true;
-                }
-            } catch (NumberFormatException ignored) {
-                isChanged = true;
-            }
-        });
         this.addDrawableChild(this.layerInput);
 
         // 5) 模式按钮
@@ -209,19 +178,13 @@ public class ImageEditScreen extends Screen {
 
         // 6) 底部按钮
         int buttonY = screenHeight - 30;
-        int btnWidth = Math.min(100, (rightWidth - 20) / 2);
-        int btnSpacing = 10;
-        int totalBtnWidth = btnWidth * 2 + btnSpacing;
-        int btnStartX = rightStartX + (rightWidth - totalBtnWidth) / 2;
+        int btnWidth = Math.min(260, (rightWidth - 20) / 2);
+        int btnStartX = rightStartX + (rightWidth - btnWidth) / 2;
 
-        this.saveButton = ButtonWidget.builder(SAVE, (btn) -> this.saveAndClose()).position(btnStartX, buttonY).size(btnWidth, 20).build();
-        this.addDrawableChild(this.saveButton);
+        this.doneButton = ButtonWidget.builder(DONE, (btn) -> this.saveAndClose()).position(btnStartX, buttonY).size(btnWidth, 20).build();
+        this.addDrawableChild(this.doneButton);
 
-        this.cancelButton = ButtonWidget.builder(CANCEL, (btn) -> this.cancel()).position(btnStartX + btnWidth + btnSpacing, buttonY).size(btnWidth, 20).build();
-        this.addDrawableChild(this.cancelButton);
-
-        loadPreviewDimension(entry.getPath());
-        isChanged = false;
+        loadPreviewDimension(entry.getAbsolutePath().toString());
     }
 
     // ========== 渲染 ==========
@@ -273,7 +236,6 @@ public class ImageEditScreen extends Screen {
         modeIndex = (modeIndex + 1) % MODES.length;
         this.modeButton.setMessage(Text.translatable("overlayer.screen.image_edit.button.mode").append(MODES[modeIndex]));
         entry.setDisplayMode(MODE_VALUES[modeIndex]);
-        isChanged = true;
     }
 
     private void openFileChooser() {
@@ -284,7 +246,6 @@ public class ImageEditScreen extends Screen {
                 entry.setPath(result);
                 entry.clearCache();
                 loadPreviewDimension(result);
-                isChanged = true;
             }
         }
     }
@@ -338,7 +299,6 @@ public class ImageEditScreen extends Screen {
 
         OverlayerManager.getInstance().save();
         onSave.accept(entry);
-        isChanged = false;
 
         if (this.client != null) {
             this.client.setScreen(lastScreen);
@@ -347,17 +307,7 @@ public class ImageEditScreen extends Screen {
 
     private void cancel() {
         if (this.client == null) return;
-        if (isChanged) {
-            this.client.setScreen(new ConfirmScreen(
-                    confirmed -> {
-                        if (confirmed) {
-                            this.client.setScreen(lastScreen);
-                        }
-                    }, Text.translatable("overlayer.screen.unsaved.title"), Text.translatable("overlayer.screen.unsaved.meg"), ScreenTexts.YES, ScreenTexts.NO
-            ));
-        } else {
-            this.client.setScreen(lastScreen);
-        }
+        this.client.setScreen(lastScreen);
     }
 
     @Override
