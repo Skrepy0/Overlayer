@@ -107,7 +107,7 @@ public class ImageList extends EntryListWidget<ImageList.Entry> {
                 context.drawText(font, "?", thumbX + thumbSize / 2 - 4, thumbY + thumbSize / 2 - 4, 0xFFFFFF, false);
             }
 
-            String pathStr = imageEntry.getPath();
+            String pathStr = imageEntry.getAbsolutePath().toString();
             int maxPathWidth = entryWidth - 30 - thumbSize - 10 - DELETE_BUTTON_WIDTH - DELETE_BUTTON_PADDING * 2 - 4;
             String display = font.trimToWidth(pathStr, maxPathWidth);
             context.drawText(font, display, x + 30 + thumbSize + 6, y + (entryHeight - 8) / 2, 0xAAAAAA, false);

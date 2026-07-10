@@ -2,6 +2,7 @@ package com.skrepy.overlayer.data;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -19,6 +20,8 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import com.skrepy.overlayer.Overlayer;
 
 import net.minecraft.client.texture.NativeImage;
 import net.minecraft.client.texture.NativeImageBackedTexture;
@@ -60,13 +63,15 @@ public class ImageEntry {
     private transient volatile boolean loadingThumbnail = false;
     private transient volatile boolean thumbnailFailed = false;
 
+    // 路径
+    private transient volatile Path absolutePath; // 绝对路径
+
     public ImageEntry(int id, String path) {
         this(id, path, 0, 0, 0, "disabled", 1.0, 1.0, 0);
     }
 
     public ImageEntry(int id, String path, int xOffset, int yOffset, int rotation, String displayMode, double scale, double alpha, int layer) {
         this.id = id;
-        this.path = path;
         this.xOffset = xOffset;
         this.yOffset = yOffset;
         this.rotation = rotation;
@@ -74,6 +79,8 @@ public class ImageEntry {
         this.scale = scale;
         this.alpha = alpha;
         this.layer = layer;
+        this.path = path;
+        this.absolutePath = Overlayer.GAME_DIR.resolve(path).normalize();
     }
 
     // ---------- Getter / Setter ----------
@@ -89,8 +96,13 @@ public class ImageEntry {
         return path;
     }
 
+    public Path getAbsolutePath() {
+        return absolutePath;
+    }
+
     public void setPath(String path) {
         this.path = path;
+        this.absolutePath = Overlayer.GAME_DIR.resolve(path).normalize();
     }
 
     public int getXOffset() {
@@ -150,7 +162,7 @@ public class ImageEntry {
     }
 
     public String getDisplayName() {
-        return new File(path).getName();
+        return this.absolutePath.toFile().getName();
     }
 
     public void clearCache() {
@@ -205,7 +217,7 @@ public class ImageEntry {
         if (gifLoading || gifLoaded) return;
         gifLoading = true;
         try {
-            File file = new File(path);
+            File file = new File(getAbsolutePath().toString());
             if (!file.exists() || !file.isFile()) {
                 LOGGER.warn("GIF 文件不存在: {}", path);
                 gifLoading = false;
@@ -353,7 +365,10 @@ public class ImageEntry {
         if (loadingStatic || staticFailed) return;
         loadingStatic = true;
         try {
-            File file = new File(path);
+            if (this.absolutePath == null) {
+                this.absolutePath = Overlayer.GAME_DIR.resolve(path).normalize();
+            }
+            File file = getAbsolutePath().toFile();
             if (!file.exists() || !file.isFile()) {
                 LOGGER.warn("静态图片不存在: {}", path);
                 staticFailed = true;
@@ -392,7 +407,10 @@ public class ImageEntry {
 
         loadingThumbnail = true;
         try {
-            File file = new File(path);
+            if (this.absolutePath == null) {
+                this.absolutePath = Overlayer.GAME_DIR.resolve(path).normalize();
+            }
+            File file = getAbsolutePath().toFile();
             if (!file.exists() || !file.isFile()) {
                 thumbnailFailed = true;
                 loadingThumbnail = false;
