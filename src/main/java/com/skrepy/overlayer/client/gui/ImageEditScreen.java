@@ -26,7 +26,6 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
@@ -39,13 +38,12 @@ import net.neoforged.neoforge.client.gui.widget.ExtendedSlider;
 @OnlyIn(Dist.CLIENT)
 public class ImageEditScreen extends Screen {
     private static final Component TITLE = Component.translatable("overlayer.screen.image_edit.title");
-    private static final Component SAVE = Component.translatable("overlayer.screen.common.save");
-    private static final Component CANCEL = Component.translatable("overlayer.screen.common.cancel");
-
+    private static final MutableComponent[] MODES = {Component.translatable("overlayer.screen.image_edit.button.mode.always"), Component.translatable("overlayer.screen.image_edit.button.mode.ingame"), Component.translatable("overlayer.screen.image_edit.button.mode.not_ingame"), Component.translatable("overlayer.screen.image_edit.button.mode.disable")};
+    private static final String[] MODE_VALUES = {"always", "ingame", "not_ingame", "disabled"};
     private final Screen lastScreen;
     private final ImageEntry entry;
     private final Consumer<ImageEntry> onSave;
-
+    private final DecimalFormat df = new DecimalFormat("0.00");
     // 控件
     private EditBox pathInput;
     private Button browseButton;
@@ -56,25 +54,15 @@ public class ImageEditScreen extends Screen {
     private ExtendedSlider alphaSlider;
     private EditBox layerInput;
     private Button modeButton;
-    private Button saveButton;
-    private Button cancelButton;
-
+    private Button doneButton;
     private int modeIndex = 0;
-    private static final MutableComponent[] MODES = {Component.translatable("overlayer.screen.image_edit.button.mode.always"), Component.translatable("overlayer.screen.image_edit.button.mode.ingame"), Component.translatable("overlayer.screen.image_edit.button.mode.not_ingame"), Component.translatable("overlayer.screen.image_edit.button.mode.disable")};
-    private static final String[] MODE_VALUES = {"always", "ingame", "not_ingame", "disabled"};
-
     // 预览相关
     private int previewSize = 150;
     private int previewX, previewY;
-
     // 缓存预览图片尺寸和文件状态
     private String currentPreviewPath = null;
     private Dimension currentPreviewDimension = null;
     private boolean previewFileExists = true;
-
-    private boolean isChanged;
-
-    private final DecimalFormat df = new DecimalFormat("0.00");
 
     public ImageEditScreen(Screen lastScreen, ImageEntry entry, Consumer<ImageEntry> onSave) {
         super(TITLE);
@@ -88,7 +76,6 @@ public class ImageEditScreen extends Screen {
                 break;
             }
         }
-        isChanged = false;
     }
 
     @Override
@@ -137,11 +124,6 @@ public class ImageEditScreen extends Screen {
         this.pathInput = new EditBox(this.font, rightStartX + rightMargin, startY, pathWidth, 20, Component.literal("图片路径"));
         this.pathInput.setMaxLength(Integer.MAX_VALUE);
         this.pathInput.setValue(entry.getPath());
-        this.pathInput.setResponder(s -> {
-            if (!s.equals(entry.getPath())) {
-                isChanged = true;
-            }
-        });
         this.addRenderableWidget(this.pathInput);
 
         this.browseButton = Button.builder(Component.literal("..."), (btn) -> this.openFileChooser()).pos(rightStartX + rightMargin + pathWidth + 4, startY).size(20, 20).tooltip(Tooltip.create(Component.translatable("overlayer.screen.button.select_file.tooltip"))).build();
@@ -183,16 +165,6 @@ public class ImageEditScreen extends Screen {
         this.layerInput.setValue(String.valueOf(entry.getLayer()));
         this.layerInput.setFilter(s -> s.matches("\\d*"));
         this.layerInput.setMaxLength(6);
-        this.layerInput.setResponder(s -> {
-            try {
-                int newLayer = Integer.parseInt(s.trim());
-                if (newLayer != entry.getLayer()) {
-                    isChanged = true;
-                }
-            } catch (NumberFormatException ignored) {
-                isChanged = true;
-            }
-        });
         this.addRenderableWidget(this.layerInput);
 
         // 5) 模式按钮
@@ -202,19 +174,13 @@ public class ImageEditScreen extends Screen {
 
         // 6) 底部按钮
         int buttonY = screenHeight - 30;
-        int btnWidth = Math.min(100, (rightWidth - 20) / 2);
-        int btnSpacing = 10;
-        int totalBtnWidth = btnWidth * 2 + btnSpacing;
-        int btnStartX = rightStartX + (rightWidth - totalBtnWidth) / 2;
+        int btnWidth = Math.min(260, (rightWidth - 20) / 2);
+        int btnStartX = rightStartX + (rightWidth - btnWidth) / 2;
 
-        this.saveButton = Button.builder(SAVE, (btn) -> this.saveAndClose()).pos(btnStartX, buttonY).size(btnWidth, 20).build();
-        this.addRenderableWidget(this.saveButton);
-
-        this.cancelButton = Button.builder(CANCEL, (btn) -> this.cancel()).pos(btnStartX + btnWidth + btnSpacing, buttonY).size(btnWidth, 20).build();
-        this.addRenderableWidget(this.cancelButton);
+        this.doneButton = Button.builder(CommonComponents.GUI_DONE, (btn) -> this.saveAndClose()).pos(btnStartX, buttonY).size(btnWidth, 20).build();
+        this.addRenderableWidget(this.doneButton);
 
         loadPreviewDimension(entry.getAbsolutePath().toString());
-        isChanged = false;
     }
 
     // ========== 渲染 ==========
@@ -331,7 +297,6 @@ public class ImageEditScreen extends Screen {
         // 保存并关闭
         OverlayerManager.getInstance().save();
         onSave.accept(entry);
-        isChanged = false; // 已保存
 
         if (this.minecraft != null) {
             this.minecraft.setScreen(lastScreen);
@@ -340,17 +305,7 @@ public class ImageEditScreen extends Screen {
 
     private void cancel() {
         if (this.minecraft == null) return;
-        if (isChanged) {
-            this.minecraft.setScreen(new ConfirmScreen(confirmed -> {
-                if (confirmed) {
-                    this.minecraft.setScreen(lastScreen);
-                } else {
-                    this.minecraft.setScreen(this);
-                }
-            }, Component.translatable("overlayer.screen.unsaved.title"), Component.translatable("overlayer.screen.unsaved.meg"), CommonComponents.GUI_YES, CommonComponents.GUI_NO));
-        } else {
-            this.minecraft.setScreen(lastScreen);
-        }
+        this.minecraft.setScreen(lastScreen);
     }
 
     @Override
