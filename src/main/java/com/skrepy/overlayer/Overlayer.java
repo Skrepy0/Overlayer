@@ -3,13 +3,13 @@ package com.skrepy.overlayer;
 import java.nio.file.Path;
 import java.util.List;
 
-import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.skrepy.overlayer.manager.OverlayerManager;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.util.Identifier;
 
 public class Overlayer implements ModInitializer {

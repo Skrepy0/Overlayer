@@ -1,8 +1,27 @@
 package com.skrepy.overlayer.client.gui;
 
+import static com.skrepy.overlayer.Overlayer.validFormat;
+import static com.skrepy.overlayer.manager.OverlayerManager.*;
+import static net.minecraft.screen.ScreenTexts.DONE;
+
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.text.DecimalFormat;
+import java.util.function.Consumer;
+
+import javax.imageio.ImageIO;
+
+import org.jetbrains.annotations.NotNull;
+import org.lwjgl.system.MemoryStack;
+
 import com.skrepy.overlayer.Overlayer;
 import com.skrepy.overlayer.data.ImageEntry;
 import com.skrepy.overlayer.manager.OverlayerManager;
+
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.DrawContext;
@@ -16,22 +35,6 @@ import net.minecraft.client.render.RenderLayer;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import org.jetbrains.annotations.NotNull;
-import org.lwjgl.system.MemoryStack;
-
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.text.DecimalFormat;
-import java.util.function.Consumer;
-
-import static com.skrepy.overlayer.Overlayer.validFormat;
-import static com.skrepy.overlayer.manager.OverlayerManager.*;
-import static net.minecraft.screen.ScreenTexts.DONE;
 
 @Environment(EnvType.CLIENT)
 public class ImageEditScreen extends Screen {
