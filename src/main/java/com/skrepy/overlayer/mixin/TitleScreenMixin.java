@@ -1,20 +1,22 @@
 package com.skrepy.overlayer.mixin;
 
+import java.lang.reflect.Field;
+import java.util.List;
+
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
 import com.skrepy.overlayer.Config;
 import com.skrepy.overlayer.client.gui.OverlayerSettingsScreen;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.network.chat.Component;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import java.lang.reflect.Field;
-import java.util.List;
 
 /**
  * 主菜单界面（TitleScreen）的 Mixin 类。
@@ -36,10 +38,10 @@ public abstract class TitleScreenMixin {
         }
 
         TitleScreen screen = (TitleScreen) (Object) this;
-        int buttonX = screen.width / 2 + 128 + Config.getTitleScreenBtnXOffset();
-        int buttonY = screen.height / 4 + 140 + Config.getTitleScreenBtnYOffset();
+        int buttonX = screen.width / 2 + 102 + Config.getTitleScreenBtnXOffset();
+        int buttonY = screen.height / 4 + 128 + Config.getTitleScreenBtnYOffset();
         Button customButton = Button.builder(Component.literal("O"), (button) -> {
-            Minecraft.getInstance().setScreen(new OverlayerSettingsScreen(screen));
+            Minecraft.getInstance().setScreenAndShow(new OverlayerSettingsScreen(screen));
         }).pos(buttonX, buttonY).size(20, 20).tooltip(Tooltip.create(Component.translatable("overlayer.screen.button.config.tooltip"))).build();
 
         try {

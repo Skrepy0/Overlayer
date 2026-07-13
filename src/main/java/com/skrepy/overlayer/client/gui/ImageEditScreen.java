@@ -1,26 +1,8 @@
 package com.skrepy.overlayer.client.gui;
 
-import com.skrepy.overlayer.Overlayer;
-import com.skrepy.overlayer.data.ImageEntry;
-import com.skrepy.overlayer.manager.OverlayerManager;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.components.StringWidget;
-import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.network.chat.CommonComponents;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-import net.neoforged.neoforge.client.gui.widget.ExtendedSlider;
-import org.jetbrains.annotations.NotNull;
-import org.lwjgl.system.MemoryStack;
+import static com.skrepy.overlayer.Overlayer.validFormat;
+import static com.skrepy.overlayer.manager.OverlayerManager.selectFile;
 
-import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
@@ -30,13 +12,32 @@ import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.function.Consumer;
 
-import static com.skrepy.overlayer.Overlayer.validFormat;
-import static com.skrepy.overlayer.manager.OverlayerManager.*;
+import javax.imageio.ImageIO;
 
-@OnlyIn(Dist.CLIENT)
+import org.jetbrains.annotations.NotNull;
+import org.lwjgl.system.MemoryStack;
+
+import com.skrepy.overlayer.Overlayer;
+import com.skrepy.overlayer.data.ImageEntry;
+import com.skrepy.overlayer.manager.OverlayerManager;
+
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.StringWidget;
+import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.Identifier;
+import net.neoforged.neoforge.client.gui.widget.ExtendedSlider;
+
 public class ImageEditScreen extends Screen {
     private static final Component TITLE = Component.translatable("overlayer.screen.image_edit.title");
-    private static final MutableComponent[] MODES = {Component.translatable("overlayer.screen.image_edit.button.mode.always"), Component.translatable("overlayer.screen.image_edit.button.mode.ingame"), Component.translatable("overlayer.screen.image_edit.button.mode.not_ingame"), Component.translatable("overlayer.screen.image_edit.button.mode.disable")};
+    private static final MutableComponent[] MODES = {Component.translatable("overlayer.screen.image_edit.button.mode.always"), Component.translatable("overlayer.screen.image_edit.button.mode.ingame"), Component.translatable("overlayer.screen.image_edit.button.mode.not_ingame"), Component.translatable("overlayer.screen.image_edit.button.mode.disable")
+    };
     private static final String[] MODE_VALUES = {"always", "ingame", "not_ingame", "disabled"};
     private final Screen lastScreen;
     private final ImageEntry entry;
@@ -75,6 +76,21 @@ public class ImageEditScreen extends Screen {
             }
         }
     }
+
+    // ========== 工具方法 ==========
+    private static String getFileExtension(String path) {
+        int dotIdx = path.lastIndexOf('.');
+        if (dotIdx > 0 && dotIdx < path.length() - 1) {
+            return path.substring(dotIdx + 1).toLowerCase();
+        }
+        return "";
+    }
+
+    private static boolean fileExists(String path) {
+        return Files.exists(Paths.get(path));
+    }
+
+    // ========== 交互事件 ==========
 
     @Override
     protected void init() {
@@ -127,7 +143,7 @@ public class ImageEditScreen extends Screen {
         this.browseButton = Button.builder(Component.literal("..."), (btn) -> this.openFileChooser()).pos(rightStartX + rightMargin + pathWidth + 4, startY).size(20, 20).tooltip(Tooltip.create(Component.translatable("overlayer.screen.button.select_file.tooltip"))).build();
         this.addRenderableWidget(this.browseButton);
 
-        // 2) 滑块 (在自定义滑块中直接标记修改)
+        // 2) 滑块
         int sliderY = startY + 28;
         int sliderWidth = rightWidth - 2 * rightMargin;
 
@@ -167,7 +183,9 @@ public class ImageEditScreen extends Screen {
 
         // 5) 模式按钮
         sliderY += 20 + spacing;
-        this.modeButton = Button.builder(Component.translatable("overlayer.screen.image_edit.button.mode").append(MODES[modeIndex]), (btn) -> this.cycleMode()).pos(rightStartX + rightMargin, sliderY).size(sliderWidth, 20).build();
+        this.modeButton = Button.builder(
+                Component.translatable("overlayer.screen.image_edit.button.mode").append(MODES[modeIndex]), (btn) -> this.cycleMode()
+        ).pos(rightStartX + rightMargin, sliderY).size(sliderWidth, 20).build();
         this.addRenderableWidget(this.modeButton);
 
         // 6) 底部按钮
@@ -183,17 +201,18 @@ public class ImageEditScreen extends Screen {
 
     // ========== 渲染 ==========
     @Override
-    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+    public void extractRenderState(@NotNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        // 1. 绘制所有子控件
+        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
 
+        // 2. 更新预览路径
         String currentPath = this.pathInput.getValue();
         if (!currentPath.equals(currentPreviewPath)) {
             loadPreviewDimension(currentPath);
         }
 
-        // 绘制预览
-        ResourceLocation texture = null;
+        // 3. 绘制预览
+        Identifier texture = null;
         if (this.minecraft != null) {
             texture = entry.getCurrentFrame(this.minecraft.getTextureManager(), 0);
         }
@@ -210,7 +229,10 @@ public class ImageEditScreen extends Screen {
             int drawX = previewX + (previewSize - drawWidth) / 2;
             int drawY = previewY + (previewSize - drawHeight) / 2;
 
-            guiGraphics.blit(RenderType::guiTextured, texture, drawX, drawY, 0.0f, 0.0f, drawWidth, drawHeight, drawWidth, drawHeight, drawWidth, drawHeight);
+            // 26.2 的新 blit 签名
+            guiGraphics.blit(
+                    RenderPipelines.GUI_TEXTURED, texture, drawX, drawY, 0.0f, 0.0f, drawWidth, drawHeight, drawWidth, drawHeight, drawWidth, drawHeight, -1
+            );
         } else {
             guiGraphics.fill(previewX, previewY, previewX + previewSize, previewY + previewSize, 0xFF888888);
             String message;
@@ -219,11 +241,9 @@ public class ImageEditScreen extends Screen {
             } else {
                 message = Component.translatable("overlayer.screen.image_edit.label.preview").getString();
             }
-            guiGraphics.drawString(this.font, message, previewX + previewSize / 2 - this.font.width(message) / 2, previewY + previewSize / 2 - 4, 0xFFFFFF);
+            guiGraphics.text(this.font, message, previewX + previewSize / 2 - this.font.width(message) / 2, previewY + previewSize / 2 - 4, 0xFFFFFF, false);
         }
     }
-
-    // ========== 交互事件 ==========
 
     private void cycleMode() {
         modeIndex = (modeIndex + 1) % MODES.length;
@@ -233,6 +253,7 @@ public class ImageEditScreen extends Screen {
 
     private void openFileChooser() {
         try (MemoryStack stack = MemoryStack.stackPush()) {
+            // 假设 selectFile 存在（可能在其他类中实现），若报错请补充实现
             String result = selectFile(stack);
             if (result != null) {
                 this.pathInput.setValue(result);
@@ -253,19 +274,16 @@ public class ImageEditScreen extends Screen {
         // ====== 验证输入 ======
         if (path.isEmpty()) {
             OverlayerToast.showWarning(Component.translatable("overlayer.toast.warning.invalid_path.title"), Component.translatable("overlayer.toast.warning.invalid_path.meg.empty_path"));
-            return; // 退出，不保存
+            return;
         }
-
         if (extension.isEmpty()) {
             OverlayerToast.showWarning(Component.translatable("overlayer.toast.warning.invalid_path.title"), Component.translatable("overlayer.toast.warning.invalid_path.meg.no_extension"));
             return;
         }
-
         if (!validFormat.contains(extension)) {
             OverlayerToast.showWarning(Component.translatable("overlayer.toast.warning.unsupported_format.title"), Component.translatable("overlayer.toast.warning.unsupported_format.meg", extension));
             return;
         }
-
         if (!fileExists(path)) {
             OverlayerToast.showWarning(Component.translatable("overlayer.toast.warning.invalid_path.title"), Component.translatable("overlayer.toast.warning.invalid_path.meg.no_file"));
             return;
@@ -292,18 +310,17 @@ public class ImageEditScreen extends Screen {
 
         entry.setDisplayMode(MODE_VALUES[modeIndex]);
 
-        // 保存并关闭
         OverlayerManager.getInstance().save();
         onSave.accept(entry);
 
         if (this.minecraft != null) {
-            this.minecraft.setScreen(lastScreen);
+            this.minecraft.setScreenAndShow(lastScreen);
         }
     }
 
     private void cancel() {
         if (this.minecraft == null) return;
-        this.minecraft.setScreen(lastScreen);
+        this.minecraft.setScreenAndShow(lastScreen);
     }
 
     @Override

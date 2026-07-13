@@ -1,7 +1,13 @@
 package com.skrepy.overlayer;
 
+import java.nio.file.Path;
+import java.util.List;
+
+import org.slf4j.Logger;
+
 import com.mojang.logging.LogUtils;
 import com.skrepy.overlayer.manager.OverlayerManager;
+
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -9,10 +15,6 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLPaths;
-import org.slf4j.Logger;
-
-import java.nio.file.Path;
-import java.util.List;
 
 @Mod(Overlayer.MOD_ID)
 public class Overlayer {

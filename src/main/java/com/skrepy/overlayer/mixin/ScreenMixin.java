@@ -1,12 +1,15 @@
 package com.skrepy.overlayer.mixin;
 
-import com.skrepy.overlayer.render.OverlayRenderer;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import com.skrepy.overlayer.Config;
+import com.skrepy.overlayer.render.OverlayRenderer;
+
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
 
 /**
  * Screen 的 Mixin 类。
@@ -20,8 +23,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Screen.class)
 public class ScreenMixin {
 
-    @Inject(method = "render", at = @At("RETURN"))
-    private void onRender(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
-        OverlayRenderer.renderOverlays(guiGraphics, partialTick);
+    @Inject(method = "extractRenderState", at = @At("RETURN"))
+    private void onExtractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+        if (!Config.isIsOpenContainerScreen()) {
+            OverlayRenderer.renderOverlays(graphics, partialTick);
+        }
     }
 }

@@ -1,22 +1,5 @@
 package com.skrepy.overlayer.data;
 
-import com.mojang.blaze3d.platform.NativeImage;
-import com.skrepy.overlayer.Overlayer;
-import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.client.renderer.texture.TextureManager;
-import net.minecraft.resources.ResourceLocation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-import javax.annotation.Nullable;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.metadata.IIOMetadata;
-import javax.imageio.metadata.IIOMetadataNode;
-import javax.imageio.stream.ImageInputStream;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.file.Path;
@@ -24,6 +7,26 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
+
+import javax.annotation.Nullable;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.metadata.IIOMetadataNode;
+import javax.imageio.stream.ImageInputStream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import com.mojang.blaze3d.platform.NativeImage;
+import com.skrepy.overlayer.Overlayer;
+
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.resources.Identifier;
 
 public class ImageEntry {
     private static final Logger LOGGER = LoggerFactory.getLogger(ImageEntry.class);
@@ -40,14 +43,14 @@ public class ImageEntry {
     private int layer;
 
     // 静态纹理缓存
-    private transient volatile ResourceLocation staticTexture;
+    private transient volatile Identifier staticTexture;
     private transient volatile int originalWidth;
     private transient volatile int originalHeight;
     private transient volatile boolean loadingStatic = false;
     private transient volatile boolean staticFailed = false;
 
     // GIF 数据
-    private transient volatile List<ResourceLocation> gifTextures;
+    private transient volatile List<Identifier> gifTextures;
     private transient volatile List<Integer> gifDelays;
     private transient volatile int gifTotalDelay = 0;
     private transient volatile long gifStartTime = 0;
@@ -56,7 +59,7 @@ public class ImageEntry {
     private transient volatile boolean isGif = false;
 
     // 缩略图
-    private transient volatile ResourceLocation thumbnailTexture;
+    private transient volatile Identifier thumbnailTexture;
     private transient volatile boolean loadingThumbnail = false;
     private transient volatile boolean thumbnailFailed = false;
 
@@ -186,7 +189,7 @@ public class ImageEntry {
 
     // ---------- 纹理加载 ----------
     @Nullable
-    public synchronized ResourceLocation getCurrentFrame(TextureManager textureManager, float partialTick) {
+    public synchronized Identifier getCurrentFrame(TextureManager textureManager, float partialTick) {
         // partialTick is intentionally unused: static images don't need it, GIF uses system time.
         if (isGif && !gifLoaded) {
             if (!gifLoading) {
@@ -214,7 +217,10 @@ public class ImageEntry {
         if (gifLoading || gifLoaded) return;
         gifLoading = true;
         try {
-            File file = new File(getAbsolutePath().toString());
+            if (this.absolutePath == null) {
+                this.absolutePath = Overlayer.GAME_DIR.resolve(path).normalize();
+            }
+            File file = getAbsolutePath().toFile();
             if (!file.exists() || !file.isFile()) {
                 LOGGER.warn("GIF 文件不存在: {}", path);
                 gifLoading = false;
@@ -241,7 +247,7 @@ public class ImageEntry {
                     return;
                 }
 
-                List<ResourceLocation> textures = new ArrayList<>();
+                List<Identifier> textures = new ArrayList<>();
                 List<Integer> delays = new ArrayList<>();
                 int totalDelay = 0;
 
@@ -256,8 +262,8 @@ public class ImageEntry {
                     // 转换为 NativeImage 并注册纹理
                     NativeImage nativeImage = convertToNativeImage(frame);
                     DynamicTexture dynamicTexture = new DynamicTexture(() -> "overlayer_texture", nativeImage);
-                    ResourceLocation location = ResourceLocation.tryBuild("overlayer", "gif/" + UUID.randomUUID());
-                    if (location == null) location = ResourceLocation.withDefaultNamespace("gif/" + UUID.randomUUID());
+                    Identifier location = Identifier.tryBuild("overlayer", "gif/" + UUID.randomUUID());
+                    if (location == null) location = Identifier.withDefaultNamespace("gif/" + UUID.randomUUID());
                     textureManager.register(location, dynamicTexture);
                     textures.add(location);
                     delays.add(delay);
@@ -329,7 +335,6 @@ public class ImageEntry {
                 }
             }
         } catch (Exception e) {
-            // 解析失败，返回 0，调用者使用默认值
             LOGGER.debug("解析帧延迟失败，使用默认值: {}", path);
         }
         return 0;
@@ -355,7 +360,7 @@ public class ImageEntry {
     }
 
     @Nullable
-    private ResourceLocation getCurrentGifFrame() {
+    private Identifier getCurrentGifFrame() {
         if (gifTextures == null || gifTextures.isEmpty()) return null;
         if (gifTotalDelay == 0) return gifTextures.getFirst();
 
@@ -398,8 +403,8 @@ public class ImageEntry {
 
             NativeImage nativeImage = convertToNativeImage(image);
             DynamicTexture dynamicTexture = new DynamicTexture(() -> "overlayer_texture", nativeImage);
-            ResourceLocation location = ResourceLocation.tryBuild("overlayer", "img/" + UUID.randomUUID());
-            if (location == null) location = ResourceLocation.withDefaultNamespace("img/" + UUID.randomUUID());
+            Identifier location = Identifier.tryBuild("overlayer", "img/" + UUID.randomUUID());
+            if (location == null) location = Identifier.withDefaultNamespace("img/" + UUID.randomUUID());
             textureManager.register(location, dynamicTexture);
             staticTexture = location;
             LOGGER.debug("静态图片加载成功: {} ({}x{})", path, originalWidth, originalHeight);
@@ -413,7 +418,7 @@ public class ImageEntry {
 
     // ---------- 缩略图 ----------
     @Nullable
-    public synchronized ResourceLocation getThumbnail(TextureManager textureManager) {
+    public synchronized Identifier getThumbnail(TextureManager textureManager) {
         if (thumbnailTexture != null) return thumbnailTexture;
         if (loadingThumbnail || thumbnailFailed) return null;
 
@@ -444,8 +449,8 @@ public class ImageEntry {
 
             NativeImage nativeImage = convertToNativeImage(scaled);
             DynamicTexture dynamicTexture = new DynamicTexture(() -> "overlayer_texture", nativeImage);
-            ResourceLocation location = ResourceLocation.tryBuild("overlayer", "thumb/" + UUID.randomUUID());
-            if (location == null) location = ResourceLocation.withDefaultNamespace("thumb/" + UUID.randomUUID());
+            Identifier location = Identifier.tryBuild("overlayer", "thumb/" + UUID.randomUUID());
+            if (location == null) location = Identifier.withDefaultNamespace("thumb/" + UUID.randomUUID());
             textureManager.register(location, dynamicTexture);
             thumbnailTexture = location;
             loadingThumbnail = false;

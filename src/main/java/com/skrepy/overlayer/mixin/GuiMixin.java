@@ -1,14 +1,18 @@
 package com.skrepy.overlayer.mixin;
 
-import com.skrepy.overlayer.Config;
-import com.skrepy.overlayer.render.OverlayRenderer;
-import net.minecraft.client.DeltaTracker;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiGraphics;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
+
+import com.skrepy.overlayer.Config;
+import com.skrepy.overlayer.render.OverlayRenderer;
+
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.util.profiling.ProfilerFiller;
 
 /**
  * Gui 的 Mixin 类。
@@ -22,11 +26,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Gui.class)
 public class GuiMixin {
 
-    @Inject(method = "render", at = @At("RETURN"))
-    private void onRender(GuiGraphics guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
+    @Inject(
+            method = "extractRenderState", at = @At("RETURN"), locals = LocalCapture.CAPTURE_FAILSOFT
+    )
+    private void onExtractRenderState(
+                                      DeltaTracker deltaTracker, boolean shouldRenderLevel, boolean resourcesLoaded, CallbackInfo ci, ProfilerFiller profiler, int xMouse, int yMouse, GuiGraphicsExtractor graphics) {
         if (!Config.isIsOpenContainerScreen()) {
             float partialTick = deltaTracker.getGameTimeDeltaPartialTick(false);
-            OverlayRenderer.renderOverlays(guiGraphics, partialTick);
+            OverlayRenderer.renderOverlays(graphics, partialTick);
         }
     }
 }

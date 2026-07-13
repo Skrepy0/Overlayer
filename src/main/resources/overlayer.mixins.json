@@ -10,7 +10,7 @@
     "requireAnnotations": true
   },
   "client": [
-    "AbstractContainerScreen",
+    "AbstractContainerScreenMixin",
     "GuiMixin",
     "OptionsScreenMixin",
     "ScreenMixin",

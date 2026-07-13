@@ -1,18 +1,18 @@
 package com.skrepy.overlayer.client.gui;
 
+import javax.annotation.Nullable;
+
+import org.jetbrains.annotations.NotNull;
+
+import com.skrepy.overlayer.Overlayer;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.toasts.Toast;
 import net.minecraft.client.gui.components.toasts.ToastManager;
 import net.minecraft.network.chat.Component;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nullable;
-
-@OnlyIn(Dist.CLIENT)
 public class OverlayerToast implements Toast {
 
     private final Component title;
@@ -40,64 +40,66 @@ public class OverlayerToast implements Toast {
     }
 
     private static void show(Component title, Component message, Type type) {
-        Minecraft.getInstance().getToastManager().addToast(new OverlayerToast(title, message, type));
+        OverlayerToast toast = new OverlayerToast(title, message, type);
+        Minecraft.getInstance().gui.toastManager().addToast(toast);
+        //Overlayer.LOGGER.debug("Toast added: title={}, message={}, type={}", title.getString(), message != null ? message.getString() : "null", type);
+    }
+
+    @Override
+    public void update(ToastManager toastManager, long time) {
+        if (displayStartTime == -1) {
+            displayStartTime = System.currentTimeMillis();
+            //Overlayer.LOGGER.debug("Toast update: start time set to {}", displayStartTime);
+        }
     }
 
     @Override
     public @NotNull Visibility getWantedVisibility() {
         if (displayStartTime == -1) {
-            return Visibility.SHOW; // 尚未开始计时，默认显示
+            return Visibility.SHOW;
         }
         long elapsed = System.currentTimeMillis() - displayStartTime;
         return elapsed < duration ? Visibility.SHOW : Visibility.HIDE;
     }
 
     @Override
-    public void update(ToastManager toastManager, long time) {
-        if (displayStartTime == -1) {
-            displayStartTime = time;
-        }
-    }
-
-    @Override
-    public void render(GuiGraphics guiGraphics, Font font, long time) {
+    public void extractRenderState(GuiGraphicsExtractor guiGraphics, Font font, long time) {
+        //Overlayer.LOGGER.debug("Toast extractRenderState called at time={}", time);
         int width = this.width();
         int height = this.height();
         int x = 0, y = 0;
 
-        // ---- 阴影 ----
+        // 阴影
         guiGraphics.fill(x + 2, y + 2, x + width + 2, y + height + 2, 0x44000000);
-
-        // ---- 主背景 ----
+        // 主背景
         guiGraphics.fill(x, y, x + width, y + height, 0x01001F);
-
-        // ---- 左侧彩色边框 ----
+        // 左侧彩色边框
         guiGraphics.fill(x, y, x + 5, y + height, type.borderColor);
 
-        // ---- 图标圆形背景 ----
+        // 图标圆形背景
         int iconSize = 16;
         int iconX = x + 12;
         int iconY = y + (height - iconSize) / 2;
-
         guiGraphics.fill(iconX, iconY, iconX + iconSize, iconY + iconSize, 0x020033);
         guiGraphics.fill(iconX + 1, iconY + 1, iconX + iconSize - 1, iconY + iconSize - 1, 0x01001F);
 
-        // ---- 图标字符 ----
+        // 图标字符
         String iconStr = type.icon;
         int iconCharWidth = font.width(iconStr);
         int iconCharHeight = font.lineHeight;
         int iconCharX = iconX + (iconSize - iconCharWidth) / 2;
         int iconCharY = iconY + (iconSize - iconCharHeight) / 2;
-        guiGraphics.drawString(font, iconStr, iconCharX, iconCharY, type.borderColor, false);
+        guiGraphics.text(font, iconStr, iconCharX, iconCharY, type.borderColor, false);
+        //Overlayer.LOGGER.debug("Toast icon drawn at ({},{}) color={}", iconCharX, iconCharY, Integer.toHexString(type.borderColor));
 
-        // ---- 文字 ----
+        // 文字
         int textX = iconX + iconSize + 10;
         int textY = y + (height - (message != null ? 30 : 20)) / 2;
-
-        guiGraphics.drawString(font, title, textX, textY, type.textColor, false);
-
+        guiGraphics.text(font, title, textX, textY, type.textColor, false);
+        //Overlayer.LOGGER.debug("Toast title drawn at ({},{}) color={}", textX, textY, Integer.toHexString(type.textColor));
         if (message != null) {
-            guiGraphics.drawString(font, message, textX, textY + 12, 0xFF888888, false);
+            guiGraphics.text(font, message, textX, textY + 12, 0xFF888888, false);
+            //Overlayer.LOGGER.debug("Toast message drawn at ({},{}) color=FF888888", textX, textY + 12);
         }
     }
 
@@ -112,12 +114,6 @@ public class OverlayerToast implements Toast {
     @Override
     public int height() {
         return message != null ? 44 : 32;
-    }
-
-    @Nullable
-    @Override
-    public net.minecraft.sounds.SoundEvent getSoundEvent() {
-        return null;
     }
 
     public enum Type {
