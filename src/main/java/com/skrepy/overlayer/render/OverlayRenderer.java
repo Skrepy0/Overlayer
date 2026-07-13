@@ -1,18 +1,19 @@
 package com.skrepy.overlayer.render;
 
+import java.util.Comparator;
+import java.util.List;
+
 import com.mojang.math.Axis;
 import com.skrepy.overlayer.Overlayer;
 import com.skrepy.overlayer.data.ImageEntry;
 import com.skrepy.overlayer.manager.OverlayerManager;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.ARGB;
-
-import java.util.Comparator;
-import java.util.List;
 
 public class OverlayRenderer {
 

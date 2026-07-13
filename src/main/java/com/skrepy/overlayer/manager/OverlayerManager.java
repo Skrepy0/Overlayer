@@ -1,18 +1,20 @@
 package com.skrepy.overlayer.manager;
 
-import com.skrepy.overlayer.data.ImageEntry;
-import com.skrepy.overlayer.data.OverlayerData;
-import com.skrepy.overlayer.data.OverlayerDataManager;
-import net.minecraft.network.chat.Component;
-import org.lwjgl.PointerBuffer;
-import org.lwjgl.system.MemoryStack;
-import org.lwjgl.util.tinyfd.TinyFileDialogs;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.lwjgl.PointerBuffer;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.util.tinyfd.TinyFileDialogs;
+
+import com.skrepy.overlayer.data.ImageEntry;
+import com.skrepy.overlayer.data.OverlayerData;
+import com.skrepy.overlayer.data.OverlayerDataManager;
+
+import net.minecraft.network.chat.Component;
 
 public class OverlayerManager {
     private static final OverlayerManager INSTANCE = new OverlayerManager();

@@ -1,8 +1,26 @@
 package com.skrepy.overlayer.client.gui;
 
+import static com.skrepy.overlayer.Overlayer.validFormat;
+import static com.skrepy.overlayer.manager.OverlayerManager.*;
+
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.text.DecimalFormat;
+import java.util.function.Consumer;
+
+import javax.imageio.ImageIO;
+
+import org.jetbrains.annotations.NotNull;
+import org.lwjgl.system.MemoryStack;
+
 import com.skrepy.overlayer.Overlayer;
 import com.skrepy.overlayer.data.ImageEntry;
 import com.skrepy.overlayer.manager.OverlayerManager;
+
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -17,21 +35,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.client.gui.widget.ExtendedSlider;
-import org.jetbrains.annotations.NotNull;
-import org.lwjgl.system.MemoryStack;
-
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.text.DecimalFormat;
-import java.util.function.Consumer;
-
-import static com.skrepy.overlayer.Overlayer.validFormat;
-import static com.skrepy.overlayer.manager.OverlayerManager.*;
 
 @OnlyIn(Dist.CLIENT)
 public class ImageEditScreen extends Screen {

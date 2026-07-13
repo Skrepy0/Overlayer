@@ -1,6 +1,12 @@
 package com.skrepy.overlayer.client.gui.components;
 
+import java.util.List;
+import java.util.function.Consumer;
+
+import org.jetbrains.annotations.NotNull;
+
 import com.skrepy.overlayer.data.ImageEntry;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -8,10 +14,6 @@ import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import org.jetbrains.annotations.NotNull;
-
-import java.util.List;
-import java.util.function.Consumer;
 
 public class ImageList extends ObjectSelectionList<ImageList.Entry> {
     private static final Component EMPTY_TEXT = Component.literal("请添加图片实例");

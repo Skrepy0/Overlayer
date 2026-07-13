@@ -4,8 +4,6 @@ import javax.annotation.Nullable;
 
 import org.jetbrains.annotations.NotNull;
 
-import com.skrepy.overlayer.Overlayer;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;

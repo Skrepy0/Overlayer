@@ -1,12 +1,14 @@
 package com.skrepy.overlayer.mixin;
 
-import com.skrepy.overlayer.render.OverlayRenderer;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import com.skrepy.overlayer.render.OverlayRenderer;
+
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 
 /**
  * Screen 的 Mixin 类。
