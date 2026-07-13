@@ -40,9 +40,7 @@ public abstract class TitleScreenMixin {
         TitleScreen screen = (TitleScreen) (Object) this;
         int buttonX = screen.width / 2 + 102 + Config.getTitleScreenBtnXOffset();
         int buttonY = screen.height / 4 + 128 + Config.getTitleScreenBtnYOffset();
-        Button customButton = Button.builder(Component.literal("O"), (button) -> {
-            Minecraft.getInstance().setScreenAndShow(new OverlayerSettingsScreen(screen));
-        }).pos(buttonX, buttonY).size(20, 20).tooltip(Tooltip.create(Component.translatable("overlayer.screen.button.config.tooltip"))).build();
+        Button customButton = Button.builder(Component.literal("O"), (_) -> Minecraft.getInstance().setScreenAndShow(new OverlayerSettingsScreen(screen))).pos(buttonX, buttonY).size(20, 20).tooltip(Tooltip.create(Component.translatable("overlayer.screen.button.config.tooltip"))).build();
 
         try {
             Field childrenField = Screen.class.getDeclaredField("children");

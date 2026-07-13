@@ -1,10 +1,7 @@
 package com.skrepy.overlayer.client.gui;
 
-import javax.annotation.Nullable;
 
 import org.jetbrains.annotations.NotNull;
-
-import com.skrepy.overlayer.Overlayer;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -46,7 +43,7 @@ public class OverlayerToast implements Toast {
     }
 
     @Override
-    public void update(ToastManager toastManager, long time) {
+    public void update(@NotNull ToastManager toastManager, long time) {
         if (displayStartTime == -1) {
             displayStartTime = System.currentTimeMillis();
             //Overlayer.LOGGER.debug("Toast update: start time set to {}", displayStartTime);

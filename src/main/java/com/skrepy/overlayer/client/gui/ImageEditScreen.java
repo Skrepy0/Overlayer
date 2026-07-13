@@ -140,7 +140,7 @@ public class ImageEditScreen extends Screen {
         this.pathInput.setValue(entry.getPath());
         this.addRenderableWidget(this.pathInput);
 
-        this.browseButton = Button.builder(Component.literal("..."), (btn) -> this.openFileChooser()).pos(rightStartX + rightMargin + pathWidth + 4, startY).size(20, 20).tooltip(Tooltip.create(Component.translatable("overlayer.screen.button.select_file.tooltip"))).build();
+        this.browseButton = Button.builder(Component.literal("..."), (_) -> this.openFileChooser()).pos(rightStartX + rightMargin + pathWidth + 4, startY).size(20, 20).tooltip(Tooltip.create(Component.translatable("overlayer.screen.button.select_file.tooltip"))).build();
         this.addRenderableWidget(this.browseButton);
 
         // 2) 滑块
@@ -184,7 +184,7 @@ public class ImageEditScreen extends Screen {
         // 5) 模式按钮
         sliderY += 20 + spacing;
         this.modeButton = Button.builder(
-                Component.translatable("overlayer.screen.image_edit.button.mode").append(MODES[modeIndex]), (btn) -> this.cycleMode()
+                Component.translatable("overlayer.screen.image_edit.button.mode").append(MODES[modeIndex]), (_) -> this.cycleMode()
         ).pos(rightStartX + rightMargin, sliderY).size(sliderWidth, 20).build();
         this.addRenderableWidget(this.modeButton);
 
@@ -193,7 +193,7 @@ public class ImageEditScreen extends Screen {
         int btnWidth = Math.min(260, (rightWidth - 20) / 2);
         int btnStartX = rightStartX + (rightWidth - btnWidth) / 2;
 
-        this.doneButton = Button.builder(CommonComponents.GUI_DONE, (btn) -> this.saveAndClose()).pos(btnStartX, buttonY).size(btnWidth, 20).build();
+        this.doneButton = Button.builder(CommonComponents.GUI_DONE, (_) -> this.saveAndClose()).pos(btnStartX, buttonY).size(btnWidth, 20).build();
         this.addRenderableWidget(this.doneButton);
 
         loadPreviewDimension(entry.getAbsolutePath().toString());
@@ -213,9 +213,7 @@ public class ImageEditScreen extends Screen {
 
         // 3. 绘制预览
         Identifier texture = null;
-        if (this.minecraft != null) {
-            texture = entry.getCurrentFrame(this.minecraft.getTextureManager(), 0);
-        }
+        texture = entry.getCurrentFrame(this.minecraft.getTextureManager(), 0);
 
         if (texture != null && currentPreviewDimension != null && previewFileExists) {
             int imgWidth = currentPreviewDimension.width;
@@ -313,13 +311,10 @@ public class ImageEditScreen extends Screen {
         OverlayerManager.getInstance().save();
         onSave.accept(entry);
 
-        if (this.minecraft != null) {
-            this.minecraft.setScreenAndShow(lastScreen);
-        }
+        this.minecraft.setScreenAndShow(lastScreen);
     }
 
     private void cancel() {
-        if (this.minecraft == null) return;
         this.minecraft.setScreenAndShow(lastScreen);
     }
 

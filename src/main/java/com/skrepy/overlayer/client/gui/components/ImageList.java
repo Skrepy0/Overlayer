@@ -16,7 +16,7 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
-public class ImageList extends ObjectSelectionList<ImageList.Entry> {
+public class ImageList extends ObjectSelectionList<ImageList.@NotNull Entry> {
     private static final int DELETE_BUTTON_WIDTH = 20;
     private static final int DELETE_BUTTON_PADDING = 4;
 
@@ -62,7 +62,7 @@ public class ImageList extends ObjectSelectionList<ImageList.Entry> {
         return this.getX() + this.width - 8;
     }
 
-    public class Entry extends ObjectSelectionList.Entry<Entry> {
+    public class Entry extends ObjectSelectionList.Entry<@NotNull Entry> {
         private final ImageEntry imageEntry;
         private final int number;
         private final Component numberText;
@@ -79,7 +79,7 @@ public class ImageList extends ObjectSelectionList<ImageList.Entry> {
         }
 
         @Override
-        public void extractContent(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, boolean isHovered, float partialTick) {
+        public void extractContent(@NotNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, boolean isHovered, float partialTick) {
             int idx = ImageList.this.children().indexOf(this);
             if (idx < 0 || idx >= ImageList.this.getItemCount()) {
                 return;

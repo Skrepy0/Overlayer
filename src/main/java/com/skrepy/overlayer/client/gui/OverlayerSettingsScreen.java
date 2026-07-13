@@ -69,20 +69,20 @@ public class OverlayerSettingsScreen extends Screen {
         this.pathInput.setMaxLength(Integer.MAX_VALUE);
         this.addRenderableWidget(this.pathInput);
 
-        this.browseButton = Button.builder(Component.literal("..."), (btn) -> this.openFileChooser()).pos(this.width / 2 + 95, inputY).size(20, 20).tooltip(Tooltip.create(Component.translatable("overlayer.screen.button.select_file.tooltip"))).build();
+        this.browseButton = Button.builder(Component.literal("..."), (_) -> this.openFileChooser()).pos(this.width / 2 + 95, inputY).size(20, 20).tooltip(Tooltip.create(Component.translatable("overlayer.screen.button.select_file.tooltip"))).build();
         this.addRenderableWidget(this.browseButton);
 
         int buttonRowY = this.height - 30;
         int totalWidth = BUTTON_WIDTH * 3 + 8;
         int startX = this.width / 2 - totalWidth / 2;
 
-        this.doneButton = Button.builder(DONE, (btn) -> this.onClose()).pos(startX, buttonRowY).size(BUTTON_WIDTH, BUTTON_HEIGHT).build();
+        this.doneButton = Button.builder(DONE, (_) -> this.onClose()).pos(startX, buttonRowY).size(BUTTON_WIDTH, BUTTON_HEIGHT).build();
         this.addRenderableWidget(this.doneButton);
 
-        this.addButton = Button.builder(ADD, (btn) -> this.addCurrentPath()).pos(startX + BUTTON_WIDTH + 4, buttonRowY).size(BUTTON_WIDTH, BUTTON_HEIGHT).build();
+        this.addButton = Button.builder(ADD, (_) -> this.addCurrentPath()).pos(startX + BUTTON_WIDTH + 4, buttonRowY).size(BUTTON_WIDTH, BUTTON_HEIGHT).build();
         this.addRenderableWidget(this.addButton);
 
-        this.clearButton = Button.builder(CLEAR, (btn) -> this.clearList()).pos(startX + (BUTTON_WIDTH + 4) * 2, buttonRowY).size(BUTTON_WIDTH, BUTTON_HEIGHT).build();
+        this.clearButton = Button.builder(CLEAR, (_) -> this.clearList()).pos(startX + (BUTTON_WIDTH + 4) * 2, buttonRowY).size(BUTTON_WIDTH, BUTTON_HEIGHT).build();
         this.addRenderableWidget(this.clearButton);
 
         this.list = new ImageList(this.minecraft, 0, 0, 0, LIST_ENTRY_HEIGHT, this.font, this::removeEntry, this::openEditScreen);
@@ -105,12 +105,10 @@ public class OverlayerSettingsScreen extends Screen {
     }
 
     private void openEditScreen(ImageEntry entry) {
-        if (this.minecraft != null) {
-            this.minecraft.setScreenAndShow(new ImageEditScreen(this, entry, (edited) -> {
-                this.list.updateEntries(this.imageEntries);
-                manager.save();
-            }));
-        }
+        this.minecraft.setScreenAndShow(new ImageEditScreen(this, entry, (_) -> {
+            this.list.updateEntries(this.imageEntries);
+            manager.save();
+        }));
     }
 
     @Override
@@ -151,9 +149,7 @@ public class OverlayerSettingsScreen extends Screen {
 
     @Override
     public void onClose() {
-        if (this.minecraft != null) {
-            this.minecraft.setScreenAndShow(this.lastScreen);
-        }
+        this.minecraft.setScreenAndShow(this.lastScreen);
     }
 
     @Override
@@ -210,35 +206,31 @@ public class OverlayerSettingsScreen extends Screen {
     }
 
     private void removeEntry(ImageEntry entry) {
-        if (this.minecraft != null) {
-            this.minecraft.setScreenAndShow(new ConfirmScreen(
-                    confirmed -> {
-                        if (confirmed) {
-                            imageEntries.remove(entry);
-                            this.list.updateEntries(imageEntries);
-                            manager.save();
-                        }
-                        this.minecraft.setScreenAndShow(this);
-                    }, Component.translatable("overlayer.screen.delete_confirm.title"), Component.translatable("overlayer.screen.delete_confirm.meg"), Component.translatable("overlayer.screen.common.delete"), CommonComponents.GUI_CANCEL
-            ));
-        }
+        this.minecraft.setScreenAndShow(new ConfirmScreen(
+                confirmed -> {
+                    if (confirmed) {
+                        imageEntries.remove(entry);
+                        this.list.updateEntries(imageEntries);
+                        manager.save();
+                    }
+                    this.minecraft.setScreenAndShow(this);
+                }, Component.translatable("overlayer.screen.delete_confirm.title"), Component.translatable("overlayer.screen.delete_confirm.meg"), Component.translatable("overlayer.screen.common.delete"), CommonComponents.GUI_CANCEL
+        ));
     }
 
     private void clearList() {
         if (imageEntries.isEmpty()) {
             return;
         }
-        if (this.minecraft != null) {
-            this.minecraft.setScreenAndShow(new ConfirmScreen(
-                    confirmed -> {
-                        if (confirmed) {
-                            imageEntries.clear();
-                            this.list.updateEntries(imageEntries);
-                            manager.save();
-                        }
-                        this.minecraft.setScreenAndShow(this);
-                    }, Component.translatable("overlayer.screen.delete_all_confirm.title"), Component.translatable("overlayer.screen.delete_all_confirm.meg"), Component.translatable("overlayer.screen.common.delete_all"), CommonComponents.GUI_CANCEL
-            ));
-        }
+        this.minecraft.setScreenAndShow(new ConfirmScreen(
+                confirmed -> {
+                    if (confirmed) {
+                        imageEntries.clear();
+                        this.list.updateEntries(imageEntries);
+                        manager.save();
+                    }
+                    this.minecraft.setScreenAndShow(this);
+                }, Component.translatable("overlayer.screen.delete_all_confirm.title"), Component.translatable("overlayer.screen.delete_all_confirm.meg"), Component.translatable("overlayer.screen.common.delete_all"), CommonComponents.GUI_CANCEL
+        ));
     }
 }
