@@ -1,5 +1,11 @@
 package com.skrepy.overlayer.client.gui;
 
+import javax.annotation.Nullable;
+
+import org.jetbrains.annotations.NotNull;
+
+import com.skrepy.overlayer.Overlayer;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -8,9 +14,6 @@ import net.minecraft.client.gui.components.toasts.ToastManager;
 import net.minecraft.network.chat.Component;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.NotNull;
-
-import javax.annotation.Nullable;
 
 @OnlyIn(Dist.CLIENT)
 public class OverlayerToast implements Toast {
@@ -53,9 +56,9 @@ public class OverlayerToast implements Toast {
     }
 
     @Override
-    public void update(ToastManager toastManager, long time) {
+    public void update(@NotNull ToastManager toastManager, long time) {
         if (displayStartTime == -1) {
-            displayStartTime = time;
+            displayStartTime = System.currentTimeMillis();
         }
     }
 
