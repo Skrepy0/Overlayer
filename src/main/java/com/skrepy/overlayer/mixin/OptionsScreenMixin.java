@@ -46,9 +46,7 @@ public abstract class OptionsScreenMixin {
         int buttonX = videoButton.getX() - 20 - 4 + Config.getOptionsScreenBtnXOffset();
         int buttonY = videoButton.getY() + Config.getOptionsScreenBtnYOffset();
 
-        Button customButton = Button.builder(Component.literal("O"), (button) -> {
-            Minecraft.getInstance().setScreen(new OverlayerSettingsScreen(screen));
-        }).pos(buttonX, buttonY).size(20, 20).tooltip(Tooltip.create(Component.translatable("overlayer.screen.button.config.tooltip"))).build();
+        Button customButton = Button.builder(Component.literal("O"), (button) -> Minecraft.getInstance().setScreen(new OverlayerSettingsScreen(screen))).pos(buttonX, buttonY).size(20, 20).tooltip(Tooltip.create(Component.translatable("overlayer.screen.button.config.tooltip"))).build();
 
         overlayer$AddWidgetToScreen(screen, customButton);
     }
