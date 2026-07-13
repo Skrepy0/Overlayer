@@ -1,17 +1,18 @@
 package com.skrepy.overlayer.render;
 
-import java.util.Comparator;
-import java.util.List;
-
-import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.math.Axis;
 import com.skrepy.overlayer.Overlayer;
 import com.skrepy.overlayer.data.ImageEntry;
 import com.skrepy.overlayer.manager.OverlayerManager;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.ARGB;
+
+import java.util.Comparator;
+import java.util.List;
 
 public class OverlayRenderer {
 
@@ -62,17 +63,15 @@ public class OverlayRenderer {
             int centerY = screenHeight / 2 + offsetY;
 
             float alpha = (float) entry.getAlpha();
+            int color = ARGB.color((int) (alpha * 255), 255, 255, 255);
 
-            RenderSystem.enableBlend();
-            RenderSystem.defaultBlendFunc();
-            guiGraphics.setColor(1.0f, 1.0f, 1.0f, alpha);
             guiGraphics.pose().pushPose();
             guiGraphics.pose().translate(centerX, centerY, 0);
-            guiGraphics.pose().mulPose(com.mojang.math.Axis.ZP.rotationDegrees(entry.getRotation()));
-            guiGraphics.blit(texture, -drawWidth / 2, -drawHeight / 2, 0, 0, drawWidth, drawHeight, drawWidth, drawHeight);
+            guiGraphics.pose().mulPose(Axis.ZP.rotationDegrees(entry.getRotation()));
+            guiGraphics.blit(
+                    RenderType::guiTextured, texture, -drawWidth / 2, -drawHeight / 2, 0.0f, 0.0f, drawWidth, drawHeight, drawWidth, drawHeight, drawWidth, drawHeight, color
+            );
             guiGraphics.pose().popPose();
-            guiGraphics.setColor(1.0f, 1.0f, 1.0f, 1.0f);
-            RenderSystem.disableBlend();
         }
     }
 }

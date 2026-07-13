@@ -1,18 +1,17 @@
 package com.skrepy.overlayer.client.gui.components;
 
-import java.util.List;
-import java.util.function.Consumer;
-
-import org.jetbrains.annotations.NotNull;
-
 import com.skrepy.overlayer.data.ImageEntry;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.ObjectSelectionList;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+import java.util.function.Consumer;
 
 public class ImageList extends ObjectSelectionList<ImageList.Entry> {
     private static final Component EMPTY_TEXT = Component.literal("请添加图片实例");
@@ -43,7 +42,7 @@ public class ImageList extends ObjectSelectionList<ImageList.Entry> {
     }
 
     @Override
-    protected int getScrollbarPosition() {
+    protected int scrollBarX() {
         return this.getX() + this.width - 8;
     }
 
@@ -86,7 +85,7 @@ public class ImageList extends ObjectSelectionList<ImageList.Entry> {
             int thumbSize = height - 4;
             ResourceLocation tex = imageEntry.getThumbnail(Minecraft.getInstance().getTextureManager());
             if (tex != null) {
-                guiGraphics.blit(tex, thumbX, thumbY, 0, 0, thumbSize, thumbSize, thumbSize, thumbSize);
+                guiGraphics.blit(RenderType::guiTextured, tex, thumbX, thumbY, 0.0f, 0.0f, thumbSize, thumbSize, thumbSize, thumbSize, thumbSize, thumbSize);
             } else {
                 guiGraphics.fill(thumbX, thumbY, thumbX + thumbSize, thumbY + thumbSize, 0xFF888888);
                 guiGraphics.drawString(font, "?", thumbX + thumbSize / 2 - 4, thumbY + thumbSize / 2 - 4, 0xFFFFFF);

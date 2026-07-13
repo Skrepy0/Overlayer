@@ -11,7 +11,7 @@ import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 
 @Mod(value = Overlayer.MOD_ID, dist = Dist.CLIENT)
-@EventBusSubscriber(modid = Overlayer.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = Overlayer.MOD_ID, value = Dist.CLIENT)
 public class OverlayerClient {
     public OverlayerClient(ModContainer container) {
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);

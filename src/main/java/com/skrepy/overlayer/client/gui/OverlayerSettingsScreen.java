@@ -1,16 +1,8 @@
 package com.skrepy.overlayer.client.gui;
 
-import static com.skrepy.overlayer.Overlayer.validFormat;
-import static com.skrepy.overlayer.manager.OverlayerManager.*;
-
-import java.util.List;
-
-import org.lwjgl.system.MemoryStack;
-
 import com.skrepy.overlayer.client.gui.components.ImageList;
 import com.skrepy.overlayer.data.ImageEntry;
 import com.skrepy.overlayer.manager.OverlayerManager;
-
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.StringWidget;
@@ -21,6 +13,12 @@ import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import org.lwjgl.system.MemoryStack;
+
+import java.util.List;
+
+import static com.skrepy.overlayer.Overlayer.validFormat;
+import static com.skrepy.overlayer.manager.OverlayerManager.*;
 
 @OnlyIn(Dist.CLIENT)
 public class OverlayerSettingsScreen extends Screen {

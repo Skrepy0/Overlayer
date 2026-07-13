@@ -1,20 +1,18 @@
 package com.skrepy.overlayer.manager;
 
+import com.skrepy.overlayer.data.ImageEntry;
+import com.skrepy.overlayer.data.OverlayerData;
+import com.skrepy.overlayer.data.OverlayerDataManager;
+import net.minecraft.network.chat.Component;
+import org.lwjgl.PointerBuffer;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.util.tinyfd.TinyFileDialogs;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.lwjgl.PointerBuffer;
-import org.lwjgl.system.MemoryStack;
-import org.lwjgl.util.tinyfd.TinyFileDialogs;
-
-import com.skrepy.overlayer.data.ImageEntry;
-import com.skrepy.overlayer.data.OverlayerData;
-import com.skrepy.overlayer.data.OverlayerDataManager;
-
-import net.minecraft.network.chat.Component;
 
 public class OverlayerManager {
     private static final OverlayerManager INSTANCE = new OverlayerManager();
@@ -25,22 +23,6 @@ public class OverlayerManager {
 
     public static OverlayerManager getInstance() {
         return INSTANCE;
-    }
-
-    public List<ImageEntry> getInstances() {
-        return instances;
-    }
-
-    public void load() {
-        instances.clear();
-        OverlayerData data = OverlayerDataManager.load();
-        instances.addAll(data.getImageInstances());
-    }
-
-    public void save() {
-        OverlayerData data = new OverlayerData();
-        data.setImageInstances(new ArrayList<>(instances));
-        OverlayerDataManager.save(data);
     }
 
     public static String getFileExtension(String filePath) {
@@ -76,6 +58,22 @@ public class OverlayerManager {
         return TinyFileDialogs.tinyfd_openFileDialog(
                 Component.translatable("overlayer.screen.common.select_pic").getString(), null, filterPatterns, null, false
         );
+    }
+
+    public List<ImageEntry> getInstances() {
+        return instances;
+    }
+
+    public void load() {
+        instances.clear();
+        OverlayerData data = OverlayerDataManager.load();
+        instances.addAll(data.getImageInstances());
+    }
+
+    public void save() {
+        OverlayerData data = new OverlayerData();
+        data.setImageInstances(new ArrayList<>(instances));
+        OverlayerDataManager.save(data);
     }
 
     public void addInstance(ImageEntry entry) {

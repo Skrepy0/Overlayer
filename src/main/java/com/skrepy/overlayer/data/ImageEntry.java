@@ -1,13 +1,15 @@
 package com.skrepy.overlayer.data;
 
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
+import com.mojang.blaze3d.platform.NativeImage;
+import com.skrepy.overlayer.Overlayer;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.resources.ResourceLocation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
@@ -15,19 +17,13 @@ import javax.imageio.ImageReader;
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.stream.ImageInputStream;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-import com.mojang.blaze3d.platform.NativeImage;
-import com.skrepy.overlayer.Overlayer;
-
-import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.client.renderer.texture.TextureManager;
-import net.minecraft.resources.ResourceLocation;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.UUID;
 
 public class ImageEntry {
     private static final Logger LOGGER = LoggerFactory.getLogger(ImageEntry.class);
@@ -96,13 +92,13 @@ public class ImageEntry {
         return path;
     }
 
-    public Path getAbsolutePath() {
-        return absolutePath;
-    }
-
     public void setPath(String path) {
         this.path = path;
         this.absolutePath = Overlayer.GAME_DIR.resolve(path).normalize();
+    }
+
+    public Path getAbsolutePath() {
+        return absolutePath;
     }
 
     public int getXOffset() {
@@ -259,7 +255,7 @@ public class ImageEntry {
 
                     // 转换为 NativeImage 并注册纹理
                     NativeImage nativeImage = convertToNativeImage(frame);
-                    DynamicTexture dynamicTexture = new DynamicTexture(nativeImage);
+                    DynamicTexture dynamicTexture = new DynamicTexture(() -> "overlayer_texture", nativeImage);
                     ResourceLocation location = ResourceLocation.tryBuild("overlayer", "gif/" + UUID.randomUUID());
                     if (location == null) location = ResourceLocation.withDefaultNamespace("gif/" + UUID.randomUUID());
                     textureManager.register(location, dynamicTexture);
@@ -352,7 +348,7 @@ public class ImageEntry {
                 int g = (argb >> 8) & 0xFF;
                 int b = argb & 0xFF;
                 int abgr = (a << 24) | (b << 16) | (g << 8) | r;
-                nativeImage.setPixelRGBA(x, y, abgr);
+                nativeImage.setPixelABGR(x, y, abgr);
             }
         }
         return nativeImage;
@@ -401,7 +397,7 @@ public class ImageEntry {
             originalHeight = image.getHeight();
 
             NativeImage nativeImage = convertToNativeImage(image);
-            DynamicTexture dynamicTexture = new DynamicTexture(nativeImage);
+            DynamicTexture dynamicTexture = new DynamicTexture(() -> "overlayer_texture", nativeImage);
             ResourceLocation location = ResourceLocation.tryBuild("overlayer", "img/" + UUID.randomUUID());
             if (location == null) location = ResourceLocation.withDefaultNamespace("img/" + UUID.randomUUID());
             textureManager.register(location, dynamicTexture);
@@ -447,7 +443,7 @@ public class ImageEntry {
             g.dispose();
 
             NativeImage nativeImage = convertToNativeImage(scaled);
-            DynamicTexture dynamicTexture = new DynamicTexture(nativeImage);
+            DynamicTexture dynamicTexture = new DynamicTexture(() -> "overlayer_texture", nativeImage);
             ResourceLocation location = ResourceLocation.tryBuild("overlayer", "thumb/" + UUID.randomUUID());
             if (location == null) location = ResourceLocation.withDefaultNamespace("thumb/" + UUID.randomUUID());
             textureManager.register(location, dynamicTexture);

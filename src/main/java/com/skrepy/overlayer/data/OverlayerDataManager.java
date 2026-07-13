@@ -1,13 +1,14 @@
 package com.skrepy.overlayer.data;
 
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.skrepy.overlayer.Overlayer;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class OverlayerDataManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();

@@ -1,8 +1,26 @@
 package com.skrepy.overlayer.client.gui;
 
-import static com.skrepy.overlayer.Overlayer.validFormat;
-import static com.skrepy.overlayer.manager.OverlayerManager.*;
+import com.skrepy.overlayer.Overlayer;
+import com.skrepy.overlayer.data.ImageEntry;
+import com.skrepy.overlayer.manager.OverlayerManager;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.StringWidget;
+import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.gui.widget.ExtendedSlider;
+import org.jetbrains.annotations.NotNull;
+import org.lwjgl.system.MemoryStack;
 
+import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
@@ -12,28 +30,8 @@ import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.function.Consumer;
 
-import javax.imageio.ImageIO;
-
-import org.jetbrains.annotations.NotNull;
-import org.lwjgl.system.MemoryStack;
-
-import com.skrepy.overlayer.Overlayer;
-import com.skrepy.overlayer.data.ImageEntry;
-import com.skrepy.overlayer.manager.OverlayerManager;
-
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.components.StringWidget;
-import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.CommonComponents;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-import net.neoforged.neoforge.client.gui.widget.ExtendedSlider;
+import static com.skrepy.overlayer.Overlayer.validFormat;
+import static com.skrepy.overlayer.manager.OverlayerManager.*;
 
 @OnlyIn(Dist.CLIENT)
 public class ImageEditScreen extends Screen {
@@ -212,7 +210,7 @@ public class ImageEditScreen extends Screen {
             int drawX = previewX + (previewSize - drawWidth) / 2;
             int drawY = previewY + (previewSize - drawHeight) / 2;
 
-            guiGraphics.blit(texture, drawX, drawY, 0, 0, drawWidth, drawHeight, drawWidth, drawHeight);
+            guiGraphics.blit(RenderType::guiTextured, texture, drawX, drawY, 0.0f, 0.0f, drawWidth, drawHeight, drawWidth, drawHeight, drawWidth, drawHeight);
         } else {
             guiGraphics.fill(previewX, previewY, previewX + previewSize, previewY + previewSize, 0xFF888888);
             String message;
