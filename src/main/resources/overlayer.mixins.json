@@ -13,6 +13,7 @@
     "AbstractContainerScreenMixin",
     "GuiMixin",
     "OptionsScreenMixin",
-    "TitleScreenMixin"
+    "TitleScreenMixin",
+    "accessor.ScreenAccessor"
   ]
 }
