@@ -6,6 +6,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.skrepy.overlayer.Overlayer;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
@@ -49,12 +50,11 @@ public class OverlayerManager {
     }
 
     public static String selectFile(MemoryStack stack) {
-        PointerBuffer filterPatterns = stack.mallocPointer(5);
-        filterPatterns.put(stack.UTF8("*.png"));
-        filterPatterns.put(stack.UTF8("*.jpg"));
-        filterPatterns.put(stack.UTF8("*.jpeg"));
-        filterPatterns.put(stack.UTF8("*.bmp"));
-        filterPatterns.put(stack.UTF8("*.gif"));
+        PointerBuffer filterPatterns = stack.mallocPointer(Overlayer.validFormat.size()+1);
+        for (String format : Overlayer.validFormat) {
+            String pattern = "*." + format;
+            filterPatterns.put(stack.UTF8(pattern));
+        }
         filterPatterns.flip();
 
         return TinyFileDialogs.tinyfd_openFileDialog(

@@ -3,6 +3,7 @@ package com.skrepy.overlayer.client.gui.components;
 import java.util.List;
 import java.util.function.Consumer;
 
+import com.skrepy.overlayer.manager.OverlayerManager;
 import org.jetbrains.annotations.NotNull;
 
 import com.skrepy.overlayer.data.ImageEntry;
@@ -97,7 +98,8 @@ public class ImageList extends ObjectSelectionList<ImageList.@NotNull Entry> {
             int thumbX = left + 30;
             int thumbY = y + 2;
             int thumbSize = height - 4;
-            Identifier tex = imageEntry.getThumbnail(Minecraft.getInstance().getTextureManager());
+
+            Identifier tex = imageEntry.getThumbnail(Minecraft.getInstance().getTextureManager(), null);
             if (tex != null) {
                 guiGraphics.blit(
                         RenderPipelines.GUI_TEXTURED, tex, thumbX, thumbY, 0.0f, 0.0f, thumbSize, thumbSize, thumbSize, thumbSize, thumbSize, thumbSize, -1

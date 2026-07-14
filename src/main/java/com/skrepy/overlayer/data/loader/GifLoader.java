@@ -1,4 +1,4 @@
-package com.skrepy.overlayer.data;
+package com.skrepy.overlayer.data.loader;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -25,6 +25,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.Identifier;
+
+import static com.skrepy.overlayer.data.loader.LoaderHelper.convertToNativeImage;
 
 public class GifLoader {
     private static final Logger LOGGER = LoggerFactory.getLogger(GifLoader.class);
@@ -218,31 +220,8 @@ public class GifLoader {
                 break;
             }
         }
-//        if (selectedIndex != lastFrameIndex && LOGGER.isDebugEnabled()) {
-//            LOGGER.debug("GIF frame switch: id={}, frame={}, delay={}ms, pos={}ms",
-//                    id, selectedIndex, gifDelays.get(selectedIndex), cycleTime);
-//        }
         lastFrameIndex = selectedIndex;
         return gifTextures.get(selectedIndex);
-    }
-
-    // ---------- 辅助方法 ----------
-    private NativeImage convertToNativeImage(BufferedImage image) {
-        int width = image.getWidth();
-        int height = image.getHeight();
-        NativeImage nativeImage = new NativeImage(NativeImage.Format.RGBA, width, height, false);
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                int argb = image.getRGB(x, y);
-                int a = (argb >> 24) & 0xFF;
-                int r = (argb >> 16) & 0xFF;
-                int g = (argb >> 8) & 0xFF;
-                int b = argb & 0xFF;
-                int abgr = (a << 24) | (b << 16) | (g << 8) | r;
-                nativeImage.setPixelABGR(x, y, abgr);
-            }
-        }
-        return nativeImage;
     }
 
     private static synchronized Identifier createPlaceholderTexture(TextureManager textureManager) {
