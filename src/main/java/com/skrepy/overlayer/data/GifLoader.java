@@ -74,7 +74,7 @@ public class GifLoader {
         gifLoading = true;
         LOGGER.info("Starting async GIF load: id={}, path={}", id, path);
 
-        CompletableFuture.supplyAsync(() -> decodeFrames(), DECODER_EXECUTOR).thenAcceptAsync(frameData -> {
+        CompletableFuture.supplyAsync(this::decodeFrames, DECODER_EXECUTOR).thenAcceptAsync(frameData -> {
             if (frameData == null || frameData.frames.isEmpty()) {
                 LOGGER.warn("GIF decode failed or empty: id={}", id);
                 gifLoading = false;
@@ -118,7 +118,7 @@ public class GifLoader {
             gifLoading = false;
             gifStartTime = System.currentTimeMillis();
             LOGGER.info("GIF loaded async: id={}, frames={}, totalDelay={}ms", id, textures.size(), totalDelay);
-        }, Minecraft.getInstance()::execute).exceptionally(e -> {
+        }, Minecraft.getInstance()).exceptionally(e -> {
             LOGGER.error("Async GIF load failed: id={}", id, e);
             gifLoading = false;
             return null;
@@ -204,7 +204,7 @@ public class GifLoader {
     public synchronized Identifier getCurrentFrame() {
         if (!gifLoaded) return null;
         if (gifTextures == null || gifTextures.isEmpty()) return null;
-        if (gifTotalDelay == 0) return gifTextures.get(0);
+        if (gifTotalDelay == 0) return gifTextures.getFirst();
 
         long currentTime = System.currentTimeMillis();
         long elapsed = currentTime - gifStartTime;
