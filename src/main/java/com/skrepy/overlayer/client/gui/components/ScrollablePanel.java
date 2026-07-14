@@ -20,7 +20,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
 public class ScrollablePanel extends AbstractWidget implements ContainerEventHandler {
-    private final List<GuiEventListener> children = new ArrayList<>();
+    private final List<ChildEntry> children = new ArrayList<>();
     private final int contentHeight;
     private int scrollOffset = 0;
     @Nullable
@@ -33,48 +33,66 @@ public class ScrollablePanel extends AbstractWidget implements ContainerEventHan
     }
 
     public void addWidget(GuiEventListener widget) {
-        children.add(widget);
+        if (widget instanceof AbstractWidget aw) {
+            // 添加时，aw 的坐标是相对于面板内部的
+            children.add(new ChildEntry(widget, aw.getX(), aw.getY()));
+            updateAllPositions();
+        }
+    }
+
+    private void updateAllPositions() {
+        for (ChildEntry entry : children) {
+            entry.updatePosition(getX(), getY(), scrollOffset);
+        }
     }
 
     @Override
-    protected void extractWidgetRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
-        guiGraphics.enableScissor(getX(), getY(), getX() + getWidth(), getY() + getHeight());
+    public void setX(int x) {
+        super.setX(x);
+        updateAllPositions();
+    }
 
-        guiGraphics.pose().pushMatrix();
-        guiGraphics.pose().translate(getX(), getY() - scrollOffset);
+    @Override
+    public void setY(int y) {
+        super.setY(y);
+        updateAllPositions();
+    }
 
-        int localX = mouseX - getX();
-        int localY = mouseY - getY() + scrollOffset;
+    @Override
+    protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        graphics.enableScissor(getX(), getY(), getX() + getWidth(), getY() + getHeight());
 
-        for (GuiEventListener child : children) {
-            if (child instanceof AbstractWidget widget) {
-                widget.extractRenderState(guiGraphics, localX, localY, partialTick);
-            } else if (child instanceof Renderable renderable) {
-                renderable.extractRenderState(guiGraphics, localX, localY, partialTick);
+        updateAllPositions();
+
+        for (ChildEntry entry : children) {
+            if (entry.widget instanceof AbstractWidget aw) {
+                int top = aw.getY();
+                int bottom = aw.getY() + aw.getHeight();
+                if (top < getY() + getHeight() && bottom > getY()) {
+                    aw.extractRenderState(graphics, mouseX, mouseY, partialTick);
+                }
+            } else if (entry.widget instanceof Renderable renderable) {
+                renderable.extractRenderState(graphics, mouseX, mouseY, partialTick);
             }
         }
 
-        guiGraphics.pose().popMatrix();
-        guiGraphics.disableScissor();
+        graphics.disableScissor();
 
         if (contentHeight > getHeight()) {
             int barHeight = (int) ((float) getHeight() / contentHeight * getHeight());
             int barY = getY() + (int) ((float) scrollOffset / (contentHeight - getHeight()) * (getHeight() - barHeight));
-            guiGraphics.fill(getX() + getWidth() - 6, barY, getX() + getWidth() - 2, barY + barHeight, 0xAAFFFFFF);
+            graphics.fill(getX() + getWidth() - 6, barY, getX() + getWidth() - 2, barY + barHeight, 0xAAFFFFFF);
         }
     }
 
-    // ----- 鼠标事件 -----
+    // ---- 鼠标事件（直接传递屏幕坐标） ----
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         if (!isMouseOver(event.x(), event.y())) return false;
-        double localX = event.x() - getX();
-        double localY = event.y() - getY() + scrollOffset;
-        MouseButtonEvent localEvent = new MouseButtonEvent(localX, localY, event.buttonInfo());
-        for (GuiEventListener child : children) {
-            if (child.isMouseOver(localX, localY)) {
-                if (child.mouseClicked(localEvent, doubleClick)) {
-                    this.setFocused(child);
+        for (ChildEntry entry : children) {
+            if (entry.widget.isMouseOver(event.x(), event.y())) {
+                if (entry.widget.mouseClicked(event, doubleClick)) {
+                    this.setFocused(entry.widget);
                     if (event.button() == 0) {
                         this.dragging = true;
                     }
@@ -90,10 +108,7 @@ public class ScrollablePanel extends AbstractWidget implements ContainerEventHan
         if (event.button() == 0 && this.dragging) {
             this.dragging = false;
             if (this.focusedChild != null) {
-                double localX = event.x() - getX();
-                double localY = event.y() - getY() + scrollOffset;
-                MouseButtonEvent localEvent = new MouseButtonEvent(localX, localY, event.buttonInfo());
-                return this.focusedChild.mouseReleased(localEvent);
+                return this.focusedChild.mouseReleased(event);
             }
         }
         return false;
@@ -102,10 +117,7 @@ public class ScrollablePanel extends AbstractWidget implements ContainerEventHan
     @Override
     public boolean mouseDragged(@NotNull MouseButtonEvent event, double dx, double dy) {
         if (this.dragging && this.focusedChild != null) {
-            double localX = event.x() - getX();
-            double localY = event.y() - getY() + scrollOffset;
-            MouseButtonEvent localEvent = new MouseButtonEvent(localX, localY, event.buttonInfo());
-            return this.focusedChild.mouseDragged(localEvent, dx, dy);
+            return this.focusedChild.mouseDragged(event, dx, dy);
         }
         return false;
     }
@@ -113,13 +125,17 @@ public class ScrollablePanel extends AbstractWidget implements ContainerEventHan
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (!isMouseOver(mouseX, mouseY)) return false;
+        if (focusedChild != null && focusedChild.isMouseOver(mouseX, mouseY)) {
+            return focusedChild.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        }
         int maxScroll = Math.max(0, contentHeight - getHeight());
         if (maxScroll <= 0) return false;
         scrollOffset = (int) Math.max(0, Math.min(maxScroll, scrollOffset - scrollY * 15));
+        updateAllPositions();
         return true;
     }
 
-    // ----- 键盘事件 -----
+    // ---- 键盘事件 ----
     @Override
     public boolean keyPressed(@NotNull KeyEvent event) {
         return focusedChild != null && focusedChild.keyPressed(event);
@@ -138,7 +154,7 @@ public class ScrollablePanel extends AbstractWidget implements ContainerEventHan
     // ----- 焦点管理 -----
     @Override
     public @NotNull List<? extends GuiEventListener> children() {
-        return children;
+        return children.stream().map(e -> e.widget).toList();
     }
 
     @Nullable
@@ -181,5 +197,15 @@ public class ScrollablePanel extends AbstractWidget implements ContainerEventHan
     @Override
     protected void updateWidgetNarration(NarrationElementOutput output) {
         output.add(NarratedElementType.TITLE, Component.literal("scrollable panel"));
+    }
+
+    private record ChildEntry(GuiEventListener widget, int relX, int relY) {
+
+        void updatePosition(int panelX, int panelY, int scrollOffset) {
+            if (widget instanceof AbstractWidget aw) {
+                aw.setX(panelX + relX);
+                aw.setY(panelY + relY - scrollOffset);
+            }
+        }
     }
 }

@@ -174,24 +174,23 @@ public class ImageEditScreen extends Screen {
         offsetY += 28 + spacing;
 
         // 2) 滑块
-        int sliderWidth = panelWidth;
-        this.xSlider = new XSlider(0, offsetY, sliderWidth, 20, Component.literal("X: "), Component.literal(" %"), -200, 200, entry.getXOffset(), 1, 0, true);
+        this.xSlider = new XSlider(0, offsetY, panelWidth, 20, Component.literal("X: "), Component.literal(" %"), -200, 200, entry.getXOffset(), 1, 0, true);
         this.scrollPanel.addWidget(this.xSlider);
         offsetY += 20 + spacing;
 
-        this.ySlider = new YSlider(0, offsetY, sliderWidth, 20, Component.literal("Y: "), Component.literal(" %"), -200, 200, entry.getYOffset(), 1, 0, true);
+        this.ySlider = new YSlider(0, offsetY, panelWidth, 20, Component.literal("Y: "), Component.literal(" %"), -200, 200, entry.getYOffset(), 1, 0, true);
         this.scrollPanel.addWidget(this.ySlider);
         offsetY += 20 + spacing;
 
-        this.rotationSlider = new RotationSlider(0, offsetY, sliderWidth, 20, Component.translatable("overlayer.screen.image_edit.slide.rotation"), Component.literal("°"), -360, 360, entry.getRotation(), 1, 0, true);
+        this.rotationSlider = new RotationSlider(0, offsetY, panelWidth, 20, Component.translatable("overlayer.screen.image_edit.slide.rotation"), Component.literal("°"), -360, 360, entry.getRotation(), 1, 0, true);
         this.scrollPanel.addWidget(this.rotationSlider);
         offsetY += 20 + spacing;
 
-        this.scaleSlider = new ScaleSlider(0, offsetY, sliderWidth, 20, Component.translatable("overlayer.screen.image_edit.slide.zoom"), Component.literal(""), 1, 300, (int) (entry.getScale() * 100), 1, 0, false);
+        this.scaleSlider = new ScaleSlider(0, offsetY, panelWidth, 20, Component.translatable("overlayer.screen.image_edit.slide.zoom"), Component.literal(""), 1, 300, (int) (entry.getScale() * 100), 1, 0, false);
         this.scrollPanel.addWidget(this.scaleSlider);
         offsetY += 20 + spacing;
 
-        this.alphaSlider = new AlphaSlider(0, offsetY, sliderWidth, 20, Component.translatable("overlayer.screen.image_edit.slide.alpha"), Component.literal(""), 1, 100, (int) (entry.getAlpha() * 100), 1, 0, false);
+        this.alphaSlider = new AlphaSlider(0, offsetY, panelWidth, 20, Component.translatable("overlayer.screen.image_edit.slide.alpha"), Component.literal(""), 1, 100, (int) (entry.getAlpha() * 100), 1, 0, false);
         this.scrollPanel.addWidget(this.alphaSlider);
         offsetY += 20 + spacing + 4;
 
@@ -203,7 +202,7 @@ public class ImageEditScreen extends Screen {
         offsetY += 20 + spacing;
 
         // 4) 图层输入框
-        this.layerInput = new EditBox(this.font, 0, offsetY, sliderWidth, 20, Component.literal("图层"));
+        this.layerInput = new EditBox(this.font, 0, offsetY, panelWidth, 20, Component.literal("图层"));
         this.layerInput.setValue(String.valueOf(entry.getLayer()));
         this.layerInput.setFilter(s -> s.matches("\\d*"));
         this.layerInput.setMaxLength(6);
@@ -213,7 +212,7 @@ public class ImageEditScreen extends Screen {
         // 5) 模式按钮
         this.modeButton = Button.builder(
                 Component.translatable("overlayer.screen.image_edit.button.mode").append(MODES[modeIndex]), (_) -> this.cycleMode()
-        ).pos(0, offsetY).size(sliderWidth, 20).build();
+        ).pos(0, offsetY).size(panelWidth, 20).build();
         this.scrollPanel.addWidget(this.modeButton);
 
         // 6) 底部按钮
@@ -248,7 +247,7 @@ public class ImageEditScreen extends Screen {
         }
 
         // 3. 绘制预览
-        Identifier texture = null;
+        Identifier texture;
         texture = entry.getCurrentFrame(this.minecraft.getTextureManager(), 0);
 
         if (texture != null && currentPreviewDimension != null && previewFileExists) {
