@@ -186,3 +186,13 @@ spotless {
         endWithNewline()
     }
 }
+
+jar {
+    from {
+         configurations.runtimeClasspath
+                .findAll { it.name.startsWith('icafe') }   // 根据文件名筛选
+                .collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA'
+}
