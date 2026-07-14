@@ -13,7 +13,6 @@
     "AbstractContainerScreenMixin",
     "GuiMixin",
     "OptionsScreenMixin",
-    "ScreenMixin",
     "TitleScreenMixin"
   ]
 }
