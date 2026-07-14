@@ -9,6 +9,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
 import javax.annotation.Nullable;
 
 import org.slf4j.Logger;
@@ -69,10 +70,18 @@ public class ImageEntry {
     }
 
     // ---------- Getter / Setter ----------
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public int getId() {
+        return id;
+    }
 
-    public String getPath() { return path; }
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
     public void setPath(String path) {
         this.path = path;
         clearCache();
@@ -84,20 +93,61 @@ public class ImageEntry {
         return Overlayer.GAME_DIR.resolve(path).normalize();
     }
 
-    public int getXOffset() { return xOffset; }
-    public void setXOffset(int xOffset) { this.xOffset = xOffset; }
-    public int getYOffset() { return yOffset; }
-    public void setYOffset(int yOffset) { this.yOffset = yOffset; }
-    public int getRotation() { return rotation; }
-    public void setRotation(int rotation) { this.rotation = rotation; }
-    public String getDisplayMode() { return displayMode; }
-    public void setDisplayMode(String displayMode) { this.displayMode = displayMode; }
-    public double getScale() { return scale; }
-    public void setScale(double scale) { this.scale = scale; }
-    public double getAlpha() { return alpha; }
-    public void setAlpha(double alpha) { this.alpha = alpha; }
-    public int getLayer() { return layer; }
-    public void setLayer(int layer) { this.layer = layer; }
+    public int getXOffset() {
+        return xOffset;
+    }
+
+    public void setXOffset(int xOffset) {
+        this.xOffset = xOffset;
+    }
+
+    public int getYOffset() {
+        return yOffset;
+    }
+
+    public void setYOffset(int yOffset) {
+        this.yOffset = yOffset;
+    }
+
+    public int getRotation() {
+        return rotation;
+    }
+
+    public void setRotation(int rotation) {
+        this.rotation = rotation;
+    }
+
+    public String getDisplayMode() {
+        return displayMode;
+    }
+
+    public void setDisplayMode(String displayMode) {
+        this.displayMode = displayMode;
+    }
+
+    public double getScale() {
+        return scale;
+    }
+
+    public void setScale(double scale) {
+        this.scale = scale;
+    }
+
+    public double getAlpha() {
+        return alpha;
+    }
+
+    public void setAlpha(double alpha) {
+        this.alpha = alpha;
+    }
+
+    public int getLayer() {
+        return layer;
+    }
+
+    public void setLayer(int layer) {
+        this.layer = layer;
+    }
 
     public String getDisplayName() {
         Path abs = getAbsolutePath();
@@ -127,8 +177,9 @@ public class ImageEntry {
 
     /**
      * 异步加载缩略图，加载完成后通过回调通知。
+     *
      * @param textureManager 纹理管理器
-     * @param onLoaded 加载完成回调（可 null），在主线程执行
+     * @param onLoaded       加载完成回调（可 null），在主线程执行
      * @return 如果已缓存则立即返回纹理，否则返回 null（加载中/失败）
      */
     @Nullable
@@ -139,36 +190,34 @@ public class ImageEntry {
         loadingThumbnail = true;
         LOGGER.debug("Start async thumbnail load: id={}, path={}", id, path);
 
-        CompletableFuture.supplyAsync(this::decodeThumbnail, THUMBNAIL_EXECUTOR)
-                .thenAcceptAsync(thumbnailImage -> {
-                    if (thumbnailImage == null) {
-                        LOGGER.warn("Thumbnail decode failed: id={}", id);
-                        loadingThumbnail = false;
-                        thumbnailFailed = true;
-                        return;
-                    }
-                    // 主线程注册纹理
-                    NativeImage nativeImage = LoaderHelper.convertToNativeImage(thumbnailImage);
-                    DynamicTexture dynTex = new DynamicTexture(() -> "overlayer_thumb", nativeImage);
-                    Identifier location = Identifier.tryBuild("overlayer", "thumb/" + UUID.randomUUID());
-                    if (location == null) {
-                        location = Identifier.withDefaultNamespace("thumb/" + UUID.randomUUID());
-                    }
-                    textureManager.register(location, dynTex);
-                    thumbnailTexture = location;
-                    loadingThumbnail = false;
-                    LOGGER.debug("Thumbnail loaded: id={}", id);
-                    // 执行回调
-                    if (onLoaded != null) {
-                        onLoaded.run();
-                    }
-                }, Minecraft.getInstance())
-                .exceptionally(e -> {
-                    LOGGER.error("Async thumbnail load failed: id={}", id, e);
-                    loadingThumbnail = false;
-                    thumbnailFailed = true;
-                    return null;
-                });
+        CompletableFuture.supplyAsync(this::decodeThumbnail, THUMBNAIL_EXECUTOR).thenAcceptAsync(thumbnailImage -> {
+            if (thumbnailImage == null) {
+                LOGGER.warn("Thumbnail decode failed: id={}", id);
+                loadingThumbnail = false;
+                thumbnailFailed = true;
+                return;
+            }
+            // 主线程注册纹理
+            NativeImage nativeImage = LoaderHelper.convertToNativeImage(thumbnailImage);
+            DynamicTexture dynTex = new DynamicTexture(() -> "overlayer_thumb", nativeImage);
+            Identifier location = Identifier.tryBuild("overlayer", "thumb/" + UUID.randomUUID());
+            if (location == null) {
+                location = Identifier.withDefaultNamespace("thumb/" + UUID.randomUUID());
+            }
+            textureManager.register(location, dynTex);
+            thumbnailTexture = location;
+            loadingThumbnail = false;
+            LOGGER.debug("Thumbnail loaded: id={}", id);
+            // 执行回调
+            if (onLoaded != null) {
+                onLoaded.run();
+            }
+        }, Minecraft.getInstance()).exceptionally(e -> {
+            LOGGER.error("Async thumbnail load failed: id={}", id, e);
+            loadingThumbnail = false;
+            thumbnailFailed = true;
+            return null;
+        });
 
         return null;
     }

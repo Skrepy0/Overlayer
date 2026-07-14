@@ -1,5 +1,7 @@
 package com.skrepy.overlayer.data.loader;
 
+import static com.skrepy.overlayer.data.loader.LoaderHelper.convertToNativeImage;
+
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.file.Path;
@@ -20,8 +22,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.Identifier;
-
-import static com.skrepy.overlayer.data.loader.LoaderHelper.convertToNativeImage;
 
 /**
  * 异步加载静态图片，使用 icafe4j 解码。
@@ -84,35 +84,33 @@ public class StaticImageLoader {
         loading = true;
         LOGGER.debug("Start async loading static image: id={}, path={}", id, path);
 
-        CompletableFuture.supplyAsync(this::decodeImage, DECODER_EXECUTOR)
-                .thenAcceptAsync(imageData -> {
-                    if (imageData == null) {
-                        LOGGER.warn("Decode failed for: id={}, path={}", id, path);
-                        loading = false;
-                        failed = true;
-                        return;
-                    }
-                    // 主线程注册纹理
-                    NativeImage nativeImage = imageData.nativeImage;
-                    DynamicTexture dynTex = new DynamicTexture(() -> "overlayer_texture", nativeImage);
-                    Identifier location = Identifier.tryBuild("overlayer", "img/" + UUID.randomUUID());
-                    if (location == null) {
-                        location = Identifier.withDefaultNamespace("img/" + UUID.randomUUID());
-                    }
-                    textureManager.register(location, dynTex);
-                    texture = location;
-                    width = imageData.width;
-                    height = imageData.height;
-                    loaded = true;
-                    loading = false;
-                    LOGGER.debug("Static image loaded: id={}, size={}x{}", id, width, height);
-                }, Minecraft.getInstance())
-                .exceptionally(e -> {
-                    LOGGER.error("Async static image load failed: id={}", id, e);
-                    loading = false;
-                    failed = true;
-                    return null;
-                });
+        CompletableFuture.supplyAsync(this::decodeImage, DECODER_EXECUTOR).thenAcceptAsync(imageData -> {
+            if (imageData == null) {
+                LOGGER.warn("Decode failed for: id={}, path={}", id, path);
+                loading = false;
+                failed = true;
+                return;
+            }
+            // 主线程注册纹理
+            NativeImage nativeImage = imageData.nativeImage;
+            DynamicTexture dynTex = new DynamicTexture(() -> "overlayer_texture", nativeImage);
+            Identifier location = Identifier.tryBuild("overlayer", "img/" + UUID.randomUUID());
+            if (location == null) {
+                location = Identifier.withDefaultNamespace("img/" + UUID.randomUUID());
+            }
+            textureManager.register(location, dynTex);
+            texture = location;
+            width = imageData.width;
+            height = imageData.height;
+            loaded = true;
+            loading = false;
+            LOGGER.debug("Static image loaded: id={}, size={}x{}", id, width, height);
+        }, Minecraft.getInstance()).exceptionally(e -> {
+            LOGGER.error("Async static image load failed: id={}", id, e);
+            loading = false;
+            failed = true;
+            return null;
+        });
     }
 
     /**
@@ -148,11 +146,25 @@ public class StaticImageLoader {
         failed = false;
     }
 
-    public boolean isLoaded() { return loaded; }
-    public boolean isLoading() { return loading; }
-    public boolean isFailed() { return failed; }
-    public int getWidth() { return width; }
-    public int getHeight() { return height; }
+    public boolean isLoaded() {
+        return loaded;
+    }
+
+    public boolean isLoading() {
+        return loading;
+    }
+
+    public boolean isFailed() {
+        return failed;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
 
     private record ImageData(NativeImage nativeImage, int width, int height) {
     }

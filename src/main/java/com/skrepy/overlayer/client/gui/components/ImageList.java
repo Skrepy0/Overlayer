@@ -3,7 +3,6 @@ package com.skrepy.overlayer.client.gui.components;
 import java.util.List;
 import java.util.function.Consumer;
 
-import com.skrepy.overlayer.manager.OverlayerManager;
 import org.jetbrains.annotations.NotNull;
 
 import com.skrepy.overlayer.data.ImageEntry;

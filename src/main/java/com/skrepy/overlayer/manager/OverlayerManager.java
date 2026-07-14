@@ -6,11 +6,11 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.skrepy.overlayer.Overlayer;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
+import com.skrepy.overlayer.Overlayer;
 import com.skrepy.overlayer.data.ImageEntry;
 import com.skrepy.overlayer.data.OverlayerData;
 import com.skrepy.overlayer.data.OverlayerDataManager;
@@ -50,7 +50,7 @@ public class OverlayerManager {
     }
 
     public static String selectFile(MemoryStack stack) {
-        PointerBuffer filterPatterns = stack.mallocPointer(Overlayer.validFormat.size()+1);
+        PointerBuffer filterPatterns = stack.mallocPointer(Overlayer.validFormat.size() + 1);
         for (String format : Overlayer.validFormat) {
             String pattern = "*." + format;
             filterPatterns.put(stack.UTF8(pattern));

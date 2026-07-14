@@ -1,5 +1,7 @@
 package com.skrepy.overlayer.data.loader;
 
+import static com.skrepy.overlayer.data.loader.LoaderHelper.convertToNativeImage;
+
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -25,8 +27,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.Identifier;
-
-import static com.skrepy.overlayer.data.loader.LoaderHelper.convertToNativeImage;
 
 public class GifLoader {
     private static final Logger LOGGER = LoggerFactory.getLogger(GifLoader.class);

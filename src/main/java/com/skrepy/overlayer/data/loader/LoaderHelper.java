@@ -1,11 +1,12 @@
 package com.skrepy.overlayer.data.loader;
 
-import com.mojang.blaze3d.platform.NativeImage;
-
 import java.awt.image.BufferedImage;
 
+import com.mojang.blaze3d.platform.NativeImage;
+
 public class LoaderHelper {
-    private LoaderHelper(){}
+    private LoaderHelper() {
+    }
 
     public static NativeImage convertToNativeImage(BufferedImage image) {
         int w = image.getWidth();
