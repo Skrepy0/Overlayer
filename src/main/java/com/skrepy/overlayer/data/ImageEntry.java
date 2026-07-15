@@ -1,39 +1,42 @@
 package com.skrepy.overlayer.data;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.nio.file.Paths;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.annotation.Nullable;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.metadata.IIOMetadata;
-import javax.imageio.metadata.IIOMetadataNode;
-import javax.imageio.stream.ImageInputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
+import com.icafe4j.image.ImageIO;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.skrepy.overlayer.Overlayer;
+import com.skrepy.overlayer.data.loader.GifLoader;
+import com.skrepy.overlayer.data.loader.LoaderHelper;
+import com.skrepy.overlayer.data.loader.StaticImageLoader;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.ResourceLocation;
 
 public class ImageEntry {
     private static final Logger LOGGER = LoggerFactory.getLogger(ImageEntry.class);
+    private static final ExecutorService THUMBNAIL_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "Thumbnail-Decoder");
+        t.setDaemon(true);
+        return t;
+    });
 
-    // 持久化字段
     private int id;
-    private String path;// 可能是相对路径
+    private String path;
     private int xOffset;
     private int yOffset;
     private int rotation;
@@ -42,30 +45,14 @@ public class ImageEntry {
     private double alpha;
     private int layer;
 
-    // 静态纹理缓存
-    private transient volatile ResourceLocation staticTexture;
-    private transient volatile int originalWidth;
-    private transient volatile int originalHeight;
-    private transient volatile boolean loadingStatic = false;
-    private transient volatile boolean staticFailed = false;
-
-    // GIF 数据
-    private transient volatile List<ResourceLocation> gifTextures;
-    private transient volatile List<Integer> gifDelays;
-    private transient volatile int gifTotalDelay = 0;
-    private transient volatile long gifStartTime = 0;
-    private transient volatile boolean gifLoaded = false;
-    private transient volatile boolean gifLoading = false;
-    private transient volatile boolean isGif = false;
-
-    // 缩略图
+    // ---------- transient 缓存 ----------
+    private transient volatile StaticImageLoader staticLoader;
+    private transient volatile GifLoader gifLoader;
     private transient volatile ResourceLocation thumbnailTexture;
     private transient volatile boolean loadingThumbnail = false;
     private transient volatile boolean thumbnailFailed = false;
 
-    // 路径
-    private transient volatile Path absolutePath; // 绝对路径
-
+    // ---------- 构造方法 ----------
     public ImageEntry(int id, String path) {
         this(id, path, 0, 0, "disabled", 1.0, 1.0, 0);
     }
@@ -79,7 +66,7 @@ public class ImageEntry {
         this.alpha = alpha;
         this.layer = layer;
         this.path = path;
-        this.absolutePath = Overlayer.GAME_DIR.resolve(path).normalize();
+        LOGGER.debug("ImageEntry created: id={}, path={}", id, path);
     }
 
     // ---------- Getter / Setter ----------
@@ -97,11 +84,15 @@ public class ImageEntry {
 
     public void setPath(String path) {
         this.path = path;
-        this.absolutePath = Overlayer.GAME_DIR.resolve(path).normalize();
+        clearCache();
+        LOGGER.debug("Path updated: id={}, newPath={}", id, path);
     }
 
     public Path getAbsolutePath() {
-        return absolutePath;
+        if (path == null || path.isEmpty()) return null;
+        Path p = Paths.get(path);
+        if (p.isAbsolute()) return p.normalize();
+        return Overlayer.GAME_DIR.resolve(path).normalize();
     }
 
     public int getXOffset() {
@@ -161,303 +152,150 @@ public class ImageEntry {
     }
 
     public String getDisplayName() {
-        return this.absolutePath.toFile().getName();
+        Path abs = getAbsolutePath();
+        return abs != null ? abs.toFile().getName() : path;
     }
 
-    public void clearCache() {
-        staticTexture = null;
-        gifTextures = null;
-        gifDelays = null;
-        thumbnailTexture = null;
-        staticFailed = false;
-        gifLoaded = false;
-        gifLoading = false;
-        thumbnailFailed = false;
-        loadingStatic = false;
-        loadingThumbnail = false;
-        isGif = false;
-        gifStartTime = 0;
-    }
-
+    // 获取原始尺寸
     public int getOriginalWidth() {
-        return originalWidth;
-    }
-
-    public int getOriginalHeight() {
-        return originalHeight;
-    }
-
-    // ---------- 纹理加载 ----------
-    @Nullable
-    public synchronized ResourceLocation getCurrentFrame(TextureManager textureManager, float partialTick) {
-        // partialTick is intentionally unused: static images don't need it, GIF uses system time.
-        if (isGif && !gifLoaded) {
-            if (!gifLoading) {
-                loadGif(textureManager);
-            }
-            return gifLoaded && !gifTextures.isEmpty() ? getCurrentGifFrame() : null;
+        if (staticLoader != null && staticLoader.isLoaded()) {
+            return staticLoader.getWidth();
         }
-
-        if (staticTexture != null) return staticTexture;
-        if (loadingStatic || staticFailed) return null;
-
-        // 检查是否为 GIF
-        if (path.toLowerCase().endsWith(".gif")) {
-            isGif = true;
-            loadGif(textureManager);
-            return gifLoaded && !gifTextures.isEmpty() ? getCurrentGifFrame() : null;
-        }
-
-        loadStatic(textureManager);
-        return staticTexture;
-    }
-
-    // ---------- GIF 加载 ----------
-    private synchronized void loadGif(TextureManager textureManager) {
-        if (gifLoading || gifLoaded) return;
-        gifLoading = true;
-        try {
-            File file = new File(getAbsolutePath().toString());
-            if (!file.exists() || !file.isFile()) {
-                LOGGER.warn("GIF 文件不存在: {}", path);
-                gifLoading = false;
-                loadStatic(textureManager);
-                return;
-            }
-
-            try (ImageInputStream stream = ImageIO.createImageInputStream(file)) {
-                Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName("gif");
-                if (!readers.hasNext()) {
-                    LOGGER.warn("未找到 GIF 读取器: {}", path);
-                    gifLoading = false;
-                    loadStatic(textureManager);
-                    return;
-                }
-                ImageReader reader = readers.next();
-                reader.setInput(stream);
-
-                int numFrames = reader.getNumImages(true);
-                if (numFrames <= 0) {
-                    LOGGER.warn("GIF 无帧: {}", path);
-                    gifLoading = false;
-                    loadStatic(textureManager);
-                    return;
-                }
-
-                List<ResourceLocation> textures = new ArrayList<>();
-                List<Integer> delays = new ArrayList<>();
-                int totalDelay = 0;
-
-                for (int i = 0; i < numFrames; i++) {
-                    BufferedImage frame = reader.read(i);
-                    if (frame == null) continue;
-
-                    // 精确获取帧延迟（毫秒）
-                    int delay = getFrameDelay(reader, i);
-                    if (delay <= 0) delay = 100; // 默认 100ms
-
-                    // 转换为 NativeImage 并注册纹理
-                    NativeImage nativeImage = convertToNativeImage(frame);
-                    DynamicTexture dynamicTexture = new DynamicTexture(() -> "overlayer_texture", nativeImage);
-                    ResourceLocation location = ResourceLocation.tryBuild("overlayer", "gif/" + UUID.randomUUID());
-                    if (location == null) location = ResourceLocation.withDefaultNamespace("gif/" + UUID.randomUUID());
-                    textureManager.register(location, dynamicTexture);
-                    textures.add(location);
-                    delays.add(delay);
-                    totalDelay += delay;
-
-                    if (i == 0) {
-                        originalWidth = frame.getWidth();
-                        originalHeight = frame.getHeight();
-                    }
-                }
-
-                if (textures.isEmpty()) {
-                    LOGGER.warn("GIF 无有效帧: {}", path);
-                    gifLoading = false;
-                    loadStatic(textureManager);
-                    return;
-                }
-
-                gifTextures = textures;
-                gifDelays = delays;
-                gifTotalDelay = totalDelay;
-                gifLoaded = true;
-                gifStartTime = System.currentTimeMillis();
-                LOGGER.info("GIF 加载成功: {} ({} 帧, 总延迟 {}ms)", path, textures.size(), totalDelay);
-            }
-        } catch (Exception e) {
-            LOGGER.error("GIF 加载失败: {}", path, e);
-            loadStatic(textureManager);
-        } finally {
-            gifLoading = false;
-        }
-    }
-
-    /**
-     * 精确解析 GIF 帧延迟时间（单位：毫秒）
-     */
-    private int getFrameDelay(ImageReader reader, int frameIndex) {
-        try {
-            IIOMetadata metadata = reader.getImageMetadata(frameIndex);
-            if (metadata == null) return 0;
-
-            // 使用标准 GIF 元数据格式
-            IIOMetadataNode root = (IIOMetadataNode) metadata.getAsTree("javax_imageio_gif_image_1.0");
-            if (root == null) return 0;
-
-            // 查找 GraphicControlExtension 节点
-            NodeList nodes = root.getElementsByTagName("GraphicControlExtension");
-            if (nodes.getLength() > 0) {
-                IIOMetadataNode node = (IIOMetadataNode) nodes.item(0);
-                String delayStr = node.getAttribute("delayTime");
-                if (!delayStr.isEmpty()) {
-                    int delay = Integer.parseInt(delayStr);
-                    // delayTime 单位是 1/100 秒，转换为毫秒
-                    return delay * 10;
-                }
-            }
-
-            // 备用方法：遍历子节点（兼容某些 GIF 格式）
-            NodeList children = root.getChildNodes();
-            for (int i = 0; i < children.getLength(); i++) {
-                Node child = children.item(i);
-                if ("GraphicControlExtension".equals(child.getNodeName())) {
-                    NamedNodeMap attrs = child.getAttributes();
-                    Node delayNode = attrs.getNamedItem("delayTime");
-                    if (delayNode != null) {
-                        int delay = Integer.parseInt(delayNode.getNodeValue());
-                        return delay * 10;
-                    }
-                }
-            }
-        } catch (Exception e) {
-            // 解析失败，返回 0，调用者使用默认值
-            LOGGER.debug("解析帧延迟失败，使用默认值: {}", path);
+        if (gifLoader != null && gifLoader.isLoaded()) {
+            return gifLoader.getOriginalWidth();
         }
         return 0;
     }
 
-    // ---------- 工具方法 ----------
-    private NativeImage convertToNativeImage(BufferedImage image) {
-        int width = image.getWidth();
-        int height = image.getHeight();
-        NativeImage nativeImage = new NativeImage(NativeImage.Format.RGBA, width, height, false);
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                int argb = image.getRGB(x, y);
-                int a = (argb >> 24) & 0xFF;
-                int r = (argb >> 16) & 0xFF;
-                int g = (argb >> 8) & 0xFF;
-                int b = argb & 0xFF;
-                int abgr = (a << 24) | (b << 16) | (g << 8) | r;
-                nativeImage.setPixelABGR(x, y, abgr);
-            }
+    public int getOriginalHeight() {
+        if (staticLoader != null && staticLoader.isLoaded()) {
+            return staticLoader.getHeight();
         }
-        return nativeImage;
+        if (gifLoader != null && gifLoader.isLoaded()) {
+            return gifLoader.getOriginalHeight();
+        }
+        return 0;
     }
 
+    /**
+     * 异步加载缩略图，加载完成后通过回调通知。
+     *
+     * @param textureManager 纹理管理器
+     * @param onLoaded       加载完成回调（可 null），在主线程执行
+     * @return 如果已缓存则立即返回纹理，否则返回 null（加载中/失败）
+     */
     @Nullable
-    private ResourceLocation getCurrentGifFrame() {
-        if (gifTextures == null || gifTextures.isEmpty()) return null;
-        if (gifTotalDelay == 0) return gifTextures.getFirst();
-
-        long elapsed = System.currentTimeMillis() - gifStartTime;
-        int cycleTime = (int) (elapsed % gifTotalDelay);
-        int accum = 0;
-        for (int i = 0; i < gifDelays.size(); i++) {
-            accum += gifDelays.get(i);
-            if (cycleTime < accum) {
-                return gifTextures.get(i);
-            }
-        }
-        return gifTextures.getFirst();
-    }
-
-    // ---------- 静态图片加载 ----------
-    private void loadStatic(TextureManager textureManager) {
-        if (loadingStatic || staticFailed) return;
-        loadingStatic = true;
-        try {
-            if (this.absolutePath == null) {
-                this.absolutePath = Overlayer.GAME_DIR.resolve(path).normalize();
-            }
-            File file = getAbsolutePath().toFile();
-            if (!file.exists() || !file.isFile()) {
-                LOGGER.warn("静态图片不存在: {}", path);
-                staticFailed = true;
-                loadingStatic = false;
-                return;
-            }
-            BufferedImage image = ImageIO.read(file);
-            if (image == null) {
-                LOGGER.warn("无法读取静态图片: {}", path);
-                staticFailed = true;
-                loadingStatic = false;
-                return;
-            }
-            originalWidth = image.getWidth();
-            originalHeight = image.getHeight();
-
-            NativeImage nativeImage = convertToNativeImage(image);
-            DynamicTexture dynamicTexture = new DynamicTexture(() -> "overlayer_texture", nativeImage);
-            ResourceLocation location = ResourceLocation.tryBuild("overlayer", "img/" + UUID.randomUUID());
-            if (location == null) location = ResourceLocation.withDefaultNamespace("img/" + UUID.randomUUID());
-            textureManager.register(location, dynamicTexture);
-            staticTexture = location;
-            LOGGER.debug("静态图片加载成功: {} ({}x{})", path, originalWidth, originalHeight);
-        } catch (Exception e) {
-            LOGGER.error("静态图片加载失败: {}", path, e);
-            staticFailed = true;
-        } finally {
-            loadingStatic = false;
-        }
-    }
-
-    // ---------- 缩略图 ----------
-    @Nullable
-    public synchronized ResourceLocation getThumbnail(TextureManager textureManager) {
+    public synchronized ResourceLocation getThumbnail(TextureManager textureManager, @Nullable Runnable onLoaded) {
         if (thumbnailTexture != null) return thumbnailTexture;
         if (loadingThumbnail || thumbnailFailed) return null;
 
         loadingThumbnail = true;
+        LOGGER.debug("Start async thumbnail load: id={}, path={}", id, path);
+
+        CompletableFuture.supplyAsync(this::decodeThumbnail, THUMBNAIL_EXECUTOR).thenAcceptAsync(thumbnailImage -> {
+            if (thumbnailImage == null) {
+                LOGGER.warn("Thumbnail decode failed: id={}", id);
+                loadingThumbnail = false;
+                thumbnailFailed = true;
+                return;
+            }
+            // 主线程注册纹理
+            NativeImage nativeImage = LoaderHelper.convertToNativeImage(thumbnailImage);
+            DynamicTexture dynTex = new DynamicTexture(() -> "overlayer_texture", nativeImage);
+            ResourceLocation location = ResourceLocation.tryBuild("overlayer", "thumb/" + UUID.randomUUID());
+            if (location == null) {
+                location = ResourceLocation.withDefaultNamespace("thumb/" + UUID.randomUUID());
+            }
+            textureManager.register(location, dynTex);
+            thumbnailTexture = location;
+            loadingThumbnail = false;
+            LOGGER.debug("Thumbnail loaded: id={}", id);
+            // 执行回调
+            if (onLoaded != null) {
+                onLoaded.run();
+            }
+        }, Minecraft.getInstance()).exceptionally(e -> {
+            LOGGER.error("Async thumbnail load failed: id={}", id, e);
+            loadingThumbnail = false;
+            thumbnailFailed = true;
+            return null;
+        });
+
+        return null;
+    }
+
+    /**
+     * 后台解码缩略图（同步方法，在后台线程执行）
+     */
+    @Nullable
+    private BufferedImage decodeThumbnail() {
         try {
-            if (this.absolutePath == null) {
-                this.absolutePath = Overlayer.GAME_DIR.resolve(path).normalize();
-            }
-            File file = this.absolutePath.toFile();
-            if (!file.exists() || !file.isFile()) {
-                thumbnailFailed = true;
-                loadingThumbnail = false;
-                return null;
-            }
+            Path absPath = getAbsolutePath();
+            if (absPath == null) return null;
+            File file = absPath.toFile();
+            if (!file.exists() || !file.isFile()) return null;
+
             BufferedImage original = ImageIO.read(file);
-            if (original == null) {
-                thumbnailFailed = true;
-                loadingThumbnail = false;
-                return null;
-            }
+            if (original == null) return null;
 
             int thumbSize = 64;
             BufferedImage scaled = new BufferedImage(thumbSize, thumbSize, BufferedImage.TYPE_INT_ARGB);
-            java.awt.Graphics2D g = scaled.createGraphics();
-            g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            Graphics2D g = scaled.createGraphics();
+            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
             g.drawImage(original, 0, 0, thumbSize, thumbSize, null);
             g.dispose();
-
-            NativeImage nativeImage = convertToNativeImage(scaled);
-            DynamicTexture dynamicTexture = new DynamicTexture(() -> "overlayer_texture", nativeImage);
-            ResourceLocation location = ResourceLocation.tryBuild("overlayer", "thumb/" + UUID.randomUUID());
-            if (location == null) location = ResourceLocation.withDefaultNamespace("thumb/" + UUID.randomUUID());
-            textureManager.register(location, dynamicTexture);
-            thumbnailTexture = location;
-            loadingThumbnail = false;
-            return thumbnailTexture;
+            return scaled;
         } catch (Exception e) {
-            LOGGER.error("加载缩略图失败: {}", path, e);
-            thumbnailFailed = true;
-            loadingThumbnail = false;
+            LOGGER.error("Thumbnail decode error: {}", path, e);
             return null;
         }
+    }
+
+    // ---------- 缓存清理 ----------
+    public void clearCache() {
+        LOGGER.debug("Clearing cache: id={}, path={}", id, path);
+        if (staticLoader != null) {
+            staticLoader.clearCache();
+            staticLoader = null;
+        }
+        if (gifLoader != null) {
+            gifLoader.clearCache();
+            gifLoader = null;
+        }
+        thumbnailTexture = null;
+        thumbnailFailed = false;
+        loadingThumbnail = false;
+    }
+
+    // ---------- 主纹理获取 ----------
+    @Nullable
+    public synchronized ResourceLocation getCurrentFrame(TextureManager textureManager, float partialTick) {
+        Path absPath = getAbsolutePath();
+        if (absPath == null) {
+            LOGGER.warn("Cannot get absolute path: id={}, path={}", id, path);
+            return null;
+        }
+
+        if (isGifFile()) {
+            if (gifLoader == null) {
+                gifLoader = new GifLoader(id, path, absPath);
+            }
+            if (!gifLoader.isLoaded() && !gifLoader.isLoading()) {
+                gifLoader.loadAsync(textureManager);
+            }
+            if (gifLoader.isLoaded()) {
+                return gifLoader.getCurrentFrame();
+            }
+            return null;
+        }
+
+        if (staticLoader == null) {
+            staticLoader = new StaticImageLoader(id, path, absPath);
+        }
+        return staticLoader.getOrLoad(textureManager);
+    }
+
+    private boolean isGifFile() {
+        return path != null && path.toLowerCase().endsWith(".gif");
     }
 }

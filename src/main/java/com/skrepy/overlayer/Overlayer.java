@@ -20,7 +20,7 @@ import net.neoforged.fml.loading.FMLPaths;
 public class Overlayer {
     public static final String MOD_ID = "overlayer";
     public static final Logger LOGGER = LogUtils.getLogger();
-    public static final List<String> validFormat = List.of("png", "jpg", "jpeg", "bmp", "gif");
+    public static final List<String> validFormat = List.of("png", "jpg", "jpeg", "bmp", "tif", "tiff", "ico", "pcx", "gif");
     public static Path GAME_DIR;
 
     public Overlayer(IEventBus modEventBus, ModContainer modContainer) {
