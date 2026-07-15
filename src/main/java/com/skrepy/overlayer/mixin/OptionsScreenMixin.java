@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.skrepy.overlayer.Config;
 import com.skrepy.overlayer.client.gui.OverlayerSettingsScreen;
+import com.skrepy.overlayer.mixin.accessor.ScreenAccessor;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
@@ -34,25 +35,43 @@ import net.minecraft.network.chat.contents.TranslatableContents;
 @Mixin(OptionsScreen.class)
 public abstract class OptionsScreenMixin {
 
+    @Unique
+    private Button overlayer$customButton;
+
     @Inject(method = "init", at = @At("RETURN"))
     private void onInit(CallbackInfo ci) {
         OptionsScreen screen = (OptionsScreen) (Object) this;
 
-        Button videoButton = overlayer$FindVideoSettingsButton(screen);
-        if (videoButton == null) {
-            return;
-        }
+        overlayer$customButton = Button.builder(
+                Component.literal("O"), btn -> Minecraft.getInstance().setScreen(new OverlayerSettingsScreen(screen))
+        ).pos(0, 0).size(20, 20).tooltip(Tooltip.create(Component.translatable("overlayer.screen.button.config.tooltip"))).build();
 
-        int buttonX = videoButton.getX() - 20 - 4 + Config.getOptionsScreenBtnXOffset();
-        int buttonY = videoButton.getY() + Config.getOptionsScreenBtnYOffset();
+        ((ScreenAccessor) screen).invokeAddRenderableWidget(overlayer$customButton);
+        overlayer$updateCustomButtonPosition(screen);
+    }
 
-        Button customButton = Button.builder(Component.literal("O"), (button) -> Minecraft.getInstance().setScreen(new OverlayerSettingsScreen(screen))).pos(buttonX, buttonY).size(20, 20).tooltip(Tooltip.create(Component.translatable("overlayer.screen.button.config.tooltip"))).build();
-
-        overlayer$AddWidgetToScreen(screen, customButton);
+    @Inject(method = "repositionElements", at = @At("TAIL"))
+    private void onRepositionElements(CallbackInfo ci) {
+        OptionsScreen screen = (OptionsScreen) (Object) this;
+        overlayer$updateCustomButtonPosition(screen);
     }
 
     @Unique
-    private Button overlayer$FindVideoSettingsButton(Screen screen) {
+    private void overlayer$updateCustomButtonPosition(OptionsScreen screen) {
+        if (overlayer$customButton == null) return;
+
+        Button videoButton = overlayer$findVideoSettingsButton(screen);
+        if (videoButton == null) return;
+
+        int newX = videoButton.getX() - 20 - 4 + Config.getOptionsScreenBtnXOffset();
+        int newY = videoButton.getY() + Config.getOptionsScreenBtnYOffset();
+
+        overlayer$customButton.setX(newX);
+        overlayer$customButton.setY(newY);
+    }
+
+    @Unique
+    private Button overlayer$findVideoSettingsButton(Screen screen) {
         try {
             Field childrenField = Screen.class.getDeclaredField("children");
             childrenField.setAccessible(true);
@@ -73,24 +92,5 @@ public abstract class OptionsScreenMixin {
             e.printStackTrace();
         }
         return null;
-    }
-
-    @Unique
-    private void overlayer$AddWidgetToScreen(Screen screen, Button widget) {
-        try {
-            Field childrenField = Screen.class.getDeclaredField("children");
-            childrenField.setAccessible(true);
-            ((List) childrenField.get(screen)).add(widget);
-
-            Field renderablesField = Screen.class.getDeclaredField("renderables");
-            renderablesField.setAccessible(true);
-            ((List) renderablesField.get(screen)).add(widget);
-
-            Field narratablesField = Screen.class.getDeclaredField("narratables");
-            narratablesField.setAccessible(true);
-            ((List) narratablesField.get(screen)).add(widget);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 }

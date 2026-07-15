@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.skrepy.overlayer.Config;
 import com.skrepy.overlayer.client.gui.OverlayerSettingsScreen;
+import com.skrepy.overlayer.mixin.accessor.ScreenAccessor;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
@@ -41,21 +42,6 @@ public abstract class TitleScreenMixin {
         int buttonX = screen.width / 2 + 128 + Config.getTitleScreenBtnXOffset();
         int buttonY = screen.height / 4 + 140 + Config.getTitleScreenBtnYOffset();
         Button customButton = Button.builder(Component.literal("O"), (button) -> Minecraft.getInstance().setScreen(new OverlayerSettingsScreen(screen))).pos(buttonX, buttonY).size(20, 20).tooltip(Tooltip.create(Component.translatable("overlayer.screen.button.config.tooltip"))).build();
-
-        try {
-            Field childrenField = Screen.class.getDeclaredField("children");
-            childrenField.setAccessible(true);
-            ((List) childrenField.get(this)).add(customButton);
-
-            Field renderablesField = Screen.class.getDeclaredField("renderables");
-            renderablesField.setAccessible(true);
-            ((List) renderablesField.get(this)).add(customButton);
-
-            Field narratablesField = Screen.class.getDeclaredField("narratables");
-            narratablesField.setAccessible(true);
-            ((List) narratablesField.get(this)).add(customButton);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        ((ScreenAccessor) screen).invokeAddRenderableWidget(customButton);
     }
 }
