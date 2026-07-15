@@ -2,7 +2,6 @@ package com.skrepy.overlayer.client.gui;
 
 import static com.skrepy.overlayer.Overlayer.validFormat;
 import static com.skrepy.overlayer.manager.OverlayerManager.*;
-import static net.minecraft.screen.ScreenTexts.DONE;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -19,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import org.lwjgl.system.MemoryStack;
 
 import com.skrepy.overlayer.Overlayer;
+import com.skrepy.overlayer.client.gui.components.ScrollablePanel;
 import com.skrepy.overlayer.data.ImageEntry;
 import com.skrepy.overlayer.manager.OverlayerManager;
 
@@ -46,6 +46,7 @@ public class ImageEditScreen extends Screen {
     private final ImageEntry entry;
     private final Consumer<ImageEntry> onSave;
     private final DecimalFormat df = new DecimalFormat("0.00");
+    ScrollablePanel scrollPanel;
     // 控件
     private TextFieldWidget pathInput;
     private ButtonWidget browseButton;
@@ -87,7 +88,7 @@ public class ImageEditScreen extends Screen {
         int screenWidth = this.width;
         int screenHeight = this.height;
 
-        // ---- 左右分栏 ----
+        // ---- 左右分栏布局 ----
         int leftWidth = (int) (screenWidth * 0.45);
         int rightWidth = screenWidth - leftWidth - 20;
         if (rightWidth < 200) {
@@ -100,9 +101,9 @@ public class ImageEditScreen extends Screen {
         }
 
         int leftStartX = 10;
-        int rightStartX = leftStartX + leftWidth + 20;
+        int rightStartX = leftStartX + leftWidth - 15;
 
-        // 标题
+        // ---- 标题 ----
         int titleY = 10;
         TextWidget titleWidget = new TextWidget(TITLE, this.textRenderer);
         titleWidget.setX((screenWidth - this.textRenderer.getWidth(TITLE)) / 2);
@@ -116,77 +117,98 @@ public class ImageEditScreen extends Screen {
         previewY = (screenHeight - previewSize) / 2;
         if (previewY < 30) previewY = 30;
 
-        // ---- 右栏控件 ----
-        int startY = 30;
-        int rightMargin = 30;
+        // ---- 右栏滚动面板 ----
+        int panelX = rightStartX + 30;
+        int panelY = 30;
+        int panelWidth = rightWidth - 20;
+        int panelHeight = screenHeight - 30 - 30 - 30; // 留出底部按钮空间
         int spacing = 6;
 
+        // 计算面板内容总高度（用于滚动）
+        int contentHeight = 0;
+        contentHeight += 28; // 路径输入 + 浏览按钮
+        contentHeight += spacing;
+        for (int i = 0; i < 5; i++) { // 5个滑块
+            contentHeight += 20 + spacing;
+        }
+        contentHeight += 4 + 20 + spacing; // 图层标签和输入框
+        contentHeight += 20 + spacing;
+        contentHeight += 20 + spacing * 2; // 模式按钮和额外间距
+
+        // 创建滚动面板
+        this.scrollPanel = new ScrollablePanel(panelX, panelY, panelWidth, panelHeight, contentHeight);
+        this.addDrawableChild(this.scrollPanel);
+
+        // ---- 在面板中添加控件（坐标相对于面板内部） ----
+        int offsetY = 0;
+
         // 1) 路径输入 + 浏览按钮
-        int pathWidth = rightWidth - 30 - 54;
-        this.pathInput = new TextFieldWidget(this.textRenderer, rightStartX + rightMargin, startY, pathWidth, 20, Text.literal("图片路径"));
+        int pathWidth = panelWidth - 24;
+        this.pathInput = new TextFieldWidget(this.textRenderer, 0, offsetY, pathWidth, 20, Text.literal("图片路径"));
         this.pathInput.setMaxLength(Integer.MAX_VALUE);
         this.pathInput.setText(entry.getPath());
-        this.addDrawableChild(this.pathInput);
+        this.scrollPanel.addWidget(this.pathInput);
 
         this.browseButton = ButtonWidget.builder(
                 Text.literal("..."), (btn) -> this.openFileChooser()
-        ).position(rightStartX + rightMargin + pathWidth + 4, startY).size(20, 20).tooltip(Tooltip.of(Text.translatable("overlayer.screen.button.select_file.tooltip"))).build();
-        this.addDrawableChild(this.browseButton);
+        ).position(pathWidth + 4, offsetY).size(20, 20).tooltip(Tooltip.of(Text.translatable("overlayer.screen.button.select_file.tooltip"))).build();
+        this.scrollPanel.addWidget(this.browseButton);
 
-        // 2) 滑块
-        int sliderY = startY + 28;
-        int sliderWidth = rightWidth - 2 * rightMargin;
+        offsetY += 28 + spacing;
 
-        this.xSlider = new XSlider(rightStartX + rightMargin, sliderY, sliderWidth, 20, Text.literal("X: "), Text.literal(" %"), -200, 200, entry.getXOffset());
-        this.addDrawableChild(this.xSlider);
+        // 2) 滑块（使用自定义滑块类，需确保它们继承自 AbstractSliderWidget 或类似）
+        this.xSlider = new XSlider(0, offsetY, panelWidth, 20, Text.literal("X: "), Text.literal(" %"), -200, 200, entry.getXOffset());
+        this.scrollPanel.addWidget(this.xSlider);
+        offsetY += 20 + spacing;
 
-        sliderY += 20 + spacing;
-        this.ySlider = new YSlider(rightStartX + rightMargin, sliderY, sliderWidth, 20, Text.literal("Y: "), Text.literal(" %"), -200, 200, entry.getYOffset());
-        this.addDrawableChild(this.ySlider);
+        this.ySlider = new YSlider(0, offsetY, panelWidth, 20, Text.literal("Y: "), Text.literal(" %"), -200, 200, entry.getYOffset());
+        this.scrollPanel.addWidget(this.ySlider);
+        offsetY += 20 + spacing;
 
-        sliderY += 20 + spacing;
-        this.rotationSlider = new RotationSlider(rightStartX + rightMargin, sliderY, sliderWidth, 20, Text.translatable("overlayer.screen.image_edit.slide.rotation"), Text.literal("°"), -360, 360, entry.getRotation());
-        this.addDrawableChild(this.rotationSlider);
+        this.rotationSlider = new RotationSlider(0, offsetY, panelWidth, 20, Text.translatable("overlayer.screen.image_edit.slide.rotation"), Text.literal("°"), -360, 360, entry.getRotation());
+        this.scrollPanel.addWidget(this.rotationSlider);
+        offsetY += 20 + spacing;
 
-        sliderY += 20 + spacing;
-        this.scaleSlider = new ScaleSlider(rightStartX + rightMargin, sliderY, sliderWidth, 20, Text.translatable("overlayer.screen.image_edit.slide.zoom"), Text.literal(""), 1, 300, (int) (entry.getScale() * 100));
-        this.addDrawableChild(this.scaleSlider);
+        this.scaleSlider = new ScaleSlider(0, offsetY, panelWidth, 20, Text.translatable("overlayer.screen.image_edit.slide.zoom"), Text.literal(""), 1, 300, (int) (entry.getScale() * 100));
+        this.scrollPanel.addWidget(this.scaleSlider);
+        offsetY += 20 + spacing;
 
-        sliderY += 20 + spacing;
-        this.alphaSlider = new AlphaSlider(rightStartX + rightMargin, sliderY, sliderWidth, 20, Text.translatable("overlayer.screen.image_edit.slide.alpha"), Text.literal(""), 1, 100, (int) (entry.getAlpha() * 100));
-        this.addDrawableChild(this.alphaSlider);
+        this.alphaSlider = new AlphaSlider(0, offsetY, panelWidth, 20, Text.translatable("overlayer.screen.image_edit.slide.alpha"), Text.literal(""), 1, 100, (int) (entry.getAlpha() * 100));
+        this.scrollPanel.addWidget(this.alphaSlider);
+        offsetY += 20 + spacing + 4;
 
         // 3) 图层标签
-        sliderY += 20 + spacing + 4;
         TextWidget layerLabel = new TextWidget(Text.translatable("overlayer.screen.image_edit.label.layer"), this.textRenderer);
-        layerLabel.setX(rightStartX + rightMargin);
-        layerLabel.setY(sliderY + 2);
-        this.addDrawableChild(layerLabel);
+        layerLabel.setX(0);
+        layerLabel.setY(offsetY + 2);
+        this.scrollPanel.addWidget(layerLabel);
+        offsetY += 20 + spacing;
 
         // 4) 图层输入框
-        sliderY += 20 + spacing;
-        this.layerInput = new TextFieldWidget(this.textRenderer, rightStartX + rightMargin, sliderY, sliderWidth, 20, Text.literal("图层"));
+        this.layerInput = new TextFieldWidget(this.textRenderer, 0, offsetY, panelWidth, 20, Text.literal("图层"));
         this.layerInput.setText(String.valueOf(entry.getLayer()));
-        // 修正: setFilter 改为 setTextPredicate
         this.layerInput.setTextPredicate(s -> s.matches("\\d*"));
         this.layerInput.setMaxLength(6);
-        this.addDrawableChild(this.layerInput);
+        this.scrollPanel.addWidget(this.layerInput);
+        offsetY += 20 + spacing;
 
         // 5) 模式按钮
-        sliderY += 20 + spacing;
         this.modeButton = ButtonWidget.builder(
                 Text.translatable("overlayer.screen.image_edit.button.mode").append(MODES[modeIndex]), (btn) -> this.cycleMode()
-        ).position(rightStartX + rightMargin, sliderY).size(sliderWidth, 20).build();
-        this.addDrawableChild(this.modeButton);
+        ).position(0, offsetY).size(panelWidth, 20).build();
+        this.scrollPanel.addWidget(this.modeButton);
 
-        // 6) 底部按钮
-        int buttonY = screenHeight - 30;
-        int btnWidth = Math.min(260, (rightWidth - 20) / 2);
-        int btnStartX = rightStartX + (rightWidth - btnWidth) / 2;
+        // ---- 6) 底部“完成”按钮（独立于面板） ----
+        int buttonY = screenHeight - 40;
+        int btnWidth = rightWidth - 20;
+        int btnStartX = rightStartX + (rightWidth - btnWidth) / 2 + 20;
 
-        this.doneButton = ButtonWidget.builder(DONE, (btn) -> this.saveAndClose()).position(btnStartX, buttonY).size(btnWidth, 20).build();
+        this.doneButton = ButtonWidget.builder(
+                Text.literal("完成"), (btn) -> this.saveAndClose()
+        ).position(btnStartX, buttonY).size(btnWidth, 20).build();
         this.addDrawableChild(this.doneButton);
 
+        // 加载预览尺寸
         loadPreviewDimension(entry.getAbsolutePath().toString());
     }
 
