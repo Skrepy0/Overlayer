@@ -16,7 +16,7 @@ public class Overlayer implements ModInitializer {
     public static final String MOD_ID = "overlayer";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     public static Path GAME_DIR;
-    public static final List<String> validFormat = List.of("png", "jpg", "jpeg", "bmp", "gif");
+    public static final List<String> validFormat = List.of("png", "jpg", "jpeg", "bmp", "tif", "tiff", "ico", "pcx", "gif");
 
     @Override
     public void onInitialize() {
