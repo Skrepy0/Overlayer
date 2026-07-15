@@ -25,7 +25,7 @@ public class Overlayer {
     public static final String MOD_ID = "overlayer";
     public static final Logger LOGGER = LogUtils.getLogger();
     public static Path GAME_DIR;
-    public static final List<String> validFormat = List.of("png", "jpg", "jpeg", "bmp", "gif");
+    public static final List<String> validFormat = List.of("png", "jpg", "jpeg", "bmp", "tif", "tiff", "ico", "pcx", "gif");
 
     public Overlayer(IEventBus modEventBus, ModContainer modContainer) {
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);

@@ -84,7 +84,7 @@ public class ImageList extends ObjectSelectionList<ImageList.Entry> {
             int thumbX = left + 30;
             int thumbY = top + 2;
             int thumbSize = height - 4;
-            ResourceLocation tex = imageEntry.getThumbnail(Minecraft.getInstance().getTextureManager());
+            ResourceLocation tex = imageEntry.getThumbnail(Minecraft.getInstance().getTextureManager(), null);
             if (tex != null) {
                 guiGraphics.blit(tex, thumbX, thumbY, 0, 0, thumbSize, thumbSize, thumbSize, thumbSize);
             } else {

@@ -28,6 +28,11 @@ sourceSets.main.resources {
 }
 
 repositories {
+    maven { url 'https://jitpack.io' }
+    maven {
+        name = "MavenCentral"
+        url = "https://repo.maven.apache.org/maven2/"
+    }
 }
 
 base {
@@ -118,6 +123,12 @@ configurations {
 }
 
 dependencies {
+    implementation('com.github.dragon66:icafe:icafe4j-v0.2') {
+        exclude group: 'javax.media', module: 'jai_imageio'
+    }
+    additionalRuntimeClasspath('com.github.dragon66:icafe:icafe4j-v0.2') {
+        exclude group: 'javax.media', module: 'jai_imageio'
+    }
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.
@@ -152,6 +163,11 @@ publishing {
         }
     }
     repositories {
+        maven { url 'https://jitpack.io' }
+        maven {
+            name = "MavenCentral"
+            url = "https://repo.maven.apache.org/maven2/"
+        }
         maven {
             url "file://${project.projectDir}/repo"
         }
@@ -178,4 +194,14 @@ spotless {
         trimTrailingWhitespace()
         endWithNewline()
     }
+}
+
+jar {
+    from {
+        configurations.runtimeClasspath
+                .findAll { it.name.startsWith('icafe') }
+                .collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA'
 }

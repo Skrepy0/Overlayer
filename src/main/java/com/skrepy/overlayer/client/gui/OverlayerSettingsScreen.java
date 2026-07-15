@@ -161,7 +161,7 @@ public class OverlayerSettingsScreen extends Screen {
             path = path.substring(1, path.length() - 1);
         }
         if (path.isEmpty()) {
-            OverlayerToast.showWarning(// TODO multiple language
+            OverlayerToast.showWarning(
                     Component.translatable("overlayer.toast.warning.invalid_path.title"), Component.translatable("overlayer.toast.warning.invalid_path.meg.empty_path")
             );
             return;
