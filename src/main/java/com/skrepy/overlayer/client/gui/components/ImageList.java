@@ -100,7 +100,7 @@ public class ImageList extends EntryListWidget<ImageList.Entry> {
             int thumbX = x + 30;
             int thumbY = y + 2;
             int thumbSize = entryHeight - 4;
-            Identifier tex = imageEntry.getThumbnail(MinecraftClient.getInstance().getTextureManager());
+            Identifier tex = imageEntry.getThumbnail(MinecraftClient.getInstance().getTextureManager(), null);
             if (tex != null) {
                 context.drawTexture(RenderLayer::getGuiTextured, tex, thumbX, thumbY, 0.0f, 0.0f, thumbSize, thumbSize, thumbSize, thumbSize);
             } else {
