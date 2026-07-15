@@ -9,9 +9,9 @@
 	],
 	"contact": {
 		"homepage": "https://github.com/Skrepy0/Overlayer",
-		"sources": "https://github.com/Skrepy0/Overlayer/issues"
+		"sources": "https://github.com/Skrepy0/Overlayer"
 	},
-	"license": "CC0-1.0",
+	"license": "MIT",
 	"icon": "assets/overlayer/icon.png",
 	"environment": "*",
 	"entrypoints": {
