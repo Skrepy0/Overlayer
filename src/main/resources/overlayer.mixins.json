@@ -10,10 +10,11 @@
     "requireAnnotations": true
   },
   "client": [
-    "GuiMixin",
     "AbstractContainerScreen",
+    "GuiMixin",
     "OptionsScreenMixin",
     "ScreenMixin",
-    "TitleScreenMixin"
+    "TitleScreenMixin",
+    "accessor.ScreenAccessor"
   ]
 }
