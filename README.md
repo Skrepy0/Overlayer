@@ -8,7 +8,7 @@ Overlayer is a client-side Minecraft mod that allows you to overlay any image (P
 
 ## ✨ Features
 
-- **Add image** – Supports PNG, JPG, JPEG, BMP, GIF
+- **Add image** – Supports PNG, JPG, JPEG, BMP, GIF, TIF, ICO, PCX.etc
 - **Intuitive GUI** – Edit entries in a clean settings screen.
 - **Live preview**– See changes instantly as you adjust sliders.
 - **Game-aware** – Images can be set to show only while playing or only on the main menu.
@@ -17,6 +17,11 @@ Overlayer is a client-side Minecraft mod that allows you to overlay any image (P
 ## 📦 Installation
 
 Download the latest Overlayer release compatible with your game and mod loader from the [Releases page](https://github.com/Skrepy0/Overlayer/releases).
+
+## 🙏 Credits
+
+- **iCafe** – Image processing library used for reading/writing various image formats.  
+  [Repository](https://github.com/dragon66/icafe)
 
 ## 📄 License
 
