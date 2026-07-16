@@ -2,7 +2,6 @@ package com.skrepy.overlayer.client.gui;
 
 import static com.skrepy.overlayer.Overlayer.validFormat;
 import static com.skrepy.overlayer.manager.OverlayerManager.*;
-import static net.minecraft.screen.ScreenTexts.DONE;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
