@@ -13,6 +13,8 @@ public class ModZHCNLangProvider extends FabricLanguageProvider {
 
     @Override
     public void generateTranslations(RegistryWrapper.WrapperLookup registryLookup, TranslationBuilder translationBuilder) {
+        translationBuilder.add("category.overlayer.general", "Overlayer通用配置");
+        translationBuilder.add("key.overlayer.toggle_show_status", "切换实例显示状态");
         translationBuilder.add("overlayer.configuration.title", "Overlayer");
 
         translationBuilder.add("overlayer.configuration", "Overlayer UI 配置");

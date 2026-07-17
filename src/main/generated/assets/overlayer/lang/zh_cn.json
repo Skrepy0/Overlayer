@@ -1,4 +1,6 @@
 {
+  "category.overlayer.general": "Overlayer通用配置",
+  "key.overlayer.toggle_show_status": "切换实例显示状态",
   "overlayer.configuration": "Overlayer UI 配置",
   "overlayer.configuration.optionsScreenBtnXOffset": "设置界面按钮X轴偏移",
   "overlayer.configuration.optionsScreenBtnYOffset": "设置界面按钮Y轴偏移",

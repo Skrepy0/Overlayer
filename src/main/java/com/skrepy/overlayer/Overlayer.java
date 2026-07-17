@@ -3,6 +3,7 @@ package com.skrepy.overlayer;
 import java.nio.file.Path;
 import java.util.List;
 
+import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,6 +11,8 @@ import com.skrepy.overlayer.manager.OverlayerManager;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.util.InputUtil;
 import net.minecraft.util.Identifier;
 
 public class Overlayer implements ModInitializer {
