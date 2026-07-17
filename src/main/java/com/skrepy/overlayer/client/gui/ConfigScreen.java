@@ -11,6 +11,7 @@ import net.minecraft.screen.ScreenTexts;
 import net.minecraft.text.Text;
 
 public class ConfigScreen extends Screen {
+    private Screen parentScreen;
 
     private static final Text[] LABELS = {Text.translatable("overlayer.configuration.titleScreenBtnXOffset"), Text.translatable("overlayer.configuration.titleScreenBtnYOffset"), Text.translatable("overlayer.configuration.optionsScreenBtnXOffset"), Text.translatable("overlayer.configuration.optionsScreenBtnYOffset")
     };
@@ -19,6 +20,11 @@ public class ConfigScreen extends Screen {
 
     public ConfigScreen() {
         super(Text.translatable("overlayer.configuration"));
+    }
+
+    public ConfigScreen(Screen parent) {
+        this();
+        this.parentScreen = parent;
     }
 
     private int getOptionsValueFromConfig(int index) {
@@ -93,7 +99,7 @@ public class ConfigScreen extends Screen {
         Config.setOptionsScreenBtnYOffset(getValue(3));
         OverlayerManager.getInstance().save();
         if (this.client != null) {
-            this.client.setScreen(null);
+            this.client.setScreen(parentScreen);
         }
     }
 

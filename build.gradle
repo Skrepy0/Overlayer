@@ -8,6 +8,7 @@ version = project.mod_version
 group = project.maven_group
 
 repositories {
+    maven { url = "https://maven.terraformersmc.com/releases/" }
     maven { url 'https://jitpack.io' }
     maven {
         name = "MavenCentral"
@@ -32,6 +33,7 @@ dependencies {
     implementation('com.github.dragon66:icafe:icafe4j-v0.2') {
         exclude group: 'javax.media', module: 'jai_imageio'
     }
+    modImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
 }
 
 processResources {
