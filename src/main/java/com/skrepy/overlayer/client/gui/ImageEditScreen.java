@@ -285,18 +285,7 @@ public class ImageEditScreen extends Screen {
             OverlayerToast.showWarning(Text.translatable("overlayer.toast.warning.invalid_path.title"), Text.translatable("overlayer.toast.warning.invalid_path.meg.empty_path"));
             return;
         }
-        if (extension.isEmpty()) {
-            OverlayerToast.showWarning(Text.translatable("overlayer.toast.warning.invalid_path.title"), Text.translatable("overlayer.toast.warning.invalid_path.meg.no_extension"));
-            return;
-        }
-        if (!validFormat.contains(extension)) {
-            OverlayerToast.showWarning(Text.translatable("overlayer.toast.warning.unsupported_format.title"), Text.translatable("overlayer.toast.warning.unsupported_format.meg", extension));
-            return;
-        }
-        if (!fileExists(path)) {
-            OverlayerToast.showWarning(Text.translatable("overlayer.toast.warning.invalid_path.title"), Text.translatable("overlayer.toast.warning.invalid_path.meg.no_file"));
-            return;
-        }
+        if (OverlayerSettingsScreen.showToast(path, extension)) return;
 
         // ====== 应用更改 ======
         if (!entry.getPath().equals(path)) {

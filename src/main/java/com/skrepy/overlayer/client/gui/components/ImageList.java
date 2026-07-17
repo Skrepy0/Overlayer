@@ -20,7 +20,6 @@ import net.minecraft.util.Identifier;
 
 @Environment(EnvType.CLIENT)
 public class ImageList extends EntryListWidget<ImageList.Entry> {
-    private static final Text EMPTY_TEXT = Text.literal("请添加图片实例");
     private static final int DELETE_BUTTON_WIDTH = 20;
     private static final int DELETE_BUTTON_PADDING = 4;
 
@@ -49,12 +48,16 @@ public class ImageList extends EntryListWidget<ImageList.Entry> {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        int left = this.left;
+        int top = this.top;
+        int right = left + this.width;
+        int bottom = top + this.height;
+
+        context.enableScissor(left, top, right, bottom);
+        this.setRenderBackground(false);
+        context.fill(left, top, right, bottom, 0x66000000);
         super.render(context, mouseX, mouseY, delta);
-        if (this.getEntryCount() == 0) {
-            context.drawCenteredTextWithShadow(
-                    textRenderer, EMPTY_TEXT, this.left + this.width / 2, this.top + this.height / 2 - 5, 0x888888
-            );
-        }
+        context.disableScissor();
     }
 
     @Override

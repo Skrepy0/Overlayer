@@ -55,6 +55,28 @@ public class OverlayerSettingsScreen extends Screen {
         this.imageEntries = manager.getInstances();
     }
 
+    static boolean showToast(String path, String extension) {
+        if (extension.isEmpty()) {
+            OverlayerToast.showWarning(
+                    Text.translatable("overlayer.toast.warning.invalid_path.title"), Text.translatable("overlayer.toast.warning.invalid_path.meg.no_extension")
+            );
+            return true;
+        }
+        if (!validFormat.contains(extension)) {
+            OverlayerToast.showWarning(
+                    Text.translatable("overlayer.toast.warning.unsupported_format.title"), Text.translatable("overlayer.toast.warning.unsupported_format.meg", extension)
+            );
+            return true;
+        }
+        if (!fileExists(path)) {
+            OverlayerToast.showWarning(
+                    Text.translatable("overlayer.toast.warning.invalid_path.title"), Text.translatable("overlayer.toast.warning.invalid_path.meg.no_file")
+            );
+            return true;
+        }
+        return false;
+    }
+
     @Override
     protected void init() {
         super.init();
@@ -69,24 +91,19 @@ public class OverlayerSettingsScreen extends Screen {
         this.pathInput = new TextFieldWidget(this.textRenderer, this.width / 2 - 110, inputY, 200, 20, Text.empty());
         this.pathInput.setMaxLength(Integer.MAX_VALUE);
 
-
         this.browseButton = ButtonWidget.builder(
                 Text.literal("..."), (btn) -> this.openFileChooser()
-        ).position(this.width / 2 + 95, inputY).size(20, 20).tooltip(Tooltip.of(Text.translatable("overlayer.screen.button.select_file.tooltip"))).build();
-
+        ).position(this.width / 2 + 96, inputY).size(22, 22).tooltip(Tooltip.of(Text.translatable("overlayer.screen.button.select_file.tooltip"))).build();
 
         int buttonRowY = this.height - 30;
         int totalWidth = BUTTON_WIDTH * 3 + 8;
         int startX = this.width / 2 - totalWidth / 2;
 
         this.doneButton = ButtonWidget.builder(DONE, (btn) -> this.close()).position(startX, buttonRowY).size(BUTTON_WIDTH, BUTTON_HEIGHT).build();
-        this.addDrawableChild(this.doneButton);
 
         this.addButton = ButtonWidget.builder(ADD, (btn) -> this.addCurrentPath()).position(startX + BUTTON_WIDTH + 4, buttonRowY).size(BUTTON_WIDTH, BUTTON_HEIGHT).build();
-        this.addDrawableChild(this.addButton);
 
         this.clearButton = ButtonWidget.builder(CLEAR, (btn) -> this.clearList()).position(startX + (BUTTON_WIDTH + 4) * 2, buttonRowY).size(BUTTON_WIDTH, BUTTON_HEIGHT).build();
-        this.addDrawableChild(this.clearButton);
 
         // 创建 ImageList
         this.list = new ImageList(this.client, 0, 0, 0, 0, LIST_ENTRY_HEIGHT, this.textRenderer, this::removeEntry, this::openEditScreen);
@@ -94,6 +111,9 @@ public class OverlayerSettingsScreen extends Screen {
         this.addDrawableChild(this.list);
         this.addDrawableChild(this.pathInput);
         this.addDrawableChild(this.browseButton);
+        this.addDrawableChild(this.doneButton);
+        this.addDrawableChild(this.addButton);
+        this.addDrawableChild(this.clearButton);
         this.updateLayout();
     }
 
@@ -141,10 +161,6 @@ public class OverlayerSettingsScreen extends Screen {
 
         this.list.updateSize(listWidth, listHeight, listTop, listTop + listHeight); // 假设底部为 top+height
         this.list.setLeftPos(10);
-
-        this.pathInput.setVisible(true);
-        this.pathInput.setDrawsBackground(true);
-        this.pathInput.setEditable(true);
     }
 
     @Override
@@ -180,24 +196,7 @@ public class OverlayerSettingsScreen extends Screen {
             return;
         }
         String extension = getFileExtension(path);
-        if (extension.isEmpty()) {
-            OverlayerToast.showWarning(
-                    Text.translatable("overlayer.toast.warning.invalid_path.title"), Text.translatable("overlayer.toast.warning.invalid_path.meg.no_extension")
-            );
-            return;
-        }
-        if (!validFormat.contains(extension)) {
-            OverlayerToast.showWarning(
-                    Text.translatable("overlayer.toast.warning.unsupported_format.title"), Text.translatable("overlayer.toast.warning.unsupported_format.meg", extension)
-            );
-            return;
-        }
-        if (!fileExists(path)) {
-            OverlayerToast.showWarning(
-                    Text.translatable("overlayer.toast.warning.invalid_path.title"), Text.translatable("overlayer.toast.warning.invalid_path.meg.no_file")
-            );
-            return;
-        }
+        if (showToast(path, extension)) return;
         int maxId = imageEntries.stream().mapToInt(ImageEntry::getId).max().orElse(0);
         int newId = maxId + 1;
         ImageEntry newEntry = new ImageEntry(newId, path);
