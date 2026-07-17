@@ -35,33 +35,40 @@ public class GifLoader {
         t.setDaemon(true);
         return t;
     });
-
+    // 共享占位纹理（由主线程创建）
+    private static Identifier placeholderTexture = null;
     private final String path;
     private final Path absolutePath;
     private final int id;
-
     // 加载完成后只读数据（由主线程访问）
     private volatile List<Identifier> gifTextures;
     private volatile List<Integer> gifDelays;
     private volatile int gifTotalDelay = 0;
     private volatile int originalWidth;
     private volatile int originalHeight;
-
     // 状态
     private volatile boolean gifLoaded = false;
     private volatile boolean gifLoading = false;
-
     // 播放辅助
     private long gifStartTime = 0;
     private int lastFrameIndex = -1;
-
-    // 共享占位纹理（由主线程创建）
-    private static Identifier placeholderTexture = null;
 
     public GifLoader(int id, String path, Path absolutePath) {
         this.id = id;
         this.path = path;
         this.absolutePath = absolutePath;
+    }
+
+    private static synchronized Identifier createPlaceholderTexture(TextureManager textureManager) {
+        if (placeholderTexture != null) return placeholderTexture;
+        NativeImage placeholder = new NativeImage(NativeImage.Format.RGBA, 1, 1, false);
+        placeholder.setColor(0, 0, 0x00000000);
+        NativeImageBackedTexture dynTex = new NativeImageBackedTexture(placeholder);
+        Identifier loc = Identifier.of("overlayer", "placeholder/" + UUID.randomUUID());
+        textureManager.registerTexture(loc, dynTex);
+        placeholderTexture = loc;
+        LOGGER.debug("Placeholder texture created: {}", loc);
+        return loc;
     }
 
     /**
@@ -219,18 +226,6 @@ public class GifLoader {
         }
         lastFrameIndex = selectedIndex;
         return gifTextures.get(selectedIndex);
-    }
-
-    private static synchronized Identifier createPlaceholderTexture(TextureManager textureManager) {
-        if (placeholderTexture != null) return placeholderTexture;
-        NativeImage placeholder = new NativeImage(NativeImage.Format.RGBA, 1, 1, false);
-        placeholder.setColor(0, 0, 0x00000000);
-        NativeImageBackedTexture dynTex = new NativeImageBackedTexture(placeholder);
-        Identifier loc = Identifier.of("overlayer", "placeholder/" + UUID.randomUUID());
-        textureManager.registerTexture(loc, dynTex);
-        placeholderTexture = loc;
-        LOGGER.debug("Placeholder texture created: {}", loc);
-        return loc;
     }
 
     public void clearCache() {

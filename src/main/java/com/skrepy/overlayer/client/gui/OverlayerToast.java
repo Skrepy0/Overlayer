@@ -12,22 +12,6 @@ import net.minecraft.text.Text;
 
 @Environment(EnvType.CLIENT)
 public class OverlayerToast implements Toast {
-    public enum Type {
-        INFO(0xFF2A7FFF, 0xFFFFFFFF, 0xFF01001F, "ℹ"), WARNING(0xFFFF8C00, 0xFFFFFFFF, 0xFF01001F, "⚠"), ERROR(0xFFFF1744, 0xFFFFFFFF, 0xFF01001F, "✕");
-
-        final int borderColor;
-        final int textColor;
-        final int bgColor;
-        final String icon;
-
-        Type(int borderColor, int textColor, int bgColor, String icon) {
-            this.borderColor = borderColor;
-            this.textColor = textColor;
-            this.bgColor = bgColor;
-            this.icon = icon;
-        }
-    }
-
     private final Text title;
     private final Text message;
     private final Type type;
@@ -122,9 +106,24 @@ public class OverlayerToast implements Toast {
         return message != null ? 44 : 32;
     }
 
-    // ========== 关键修复：为每个实例返回唯一类型 ==========
     @Override
     public Object getType() {
-        return this; // 确保每个 Toast 独立
+        return this;
+    }
+
+    public enum Type {
+        INFO(0xFF2A7FFF, 0xFFFFFFFF, 0xFF01001F, "ℹ"), WARNING(0xFFFF8C00, 0xFFFFFFFF, 0xFF01001F, "⚠"), ERROR(0xFFFF1744, 0xFFFFFFFF, 0xFF01001F, "✕");
+
+        final int borderColor;
+        final int textColor;
+        final int bgColor;
+        final String icon;
+
+        Type(int borderColor, int textColor, int bgColor, String icon) {
+            this.borderColor = borderColor;
+            this.textColor = textColor;
+            this.bgColor = bgColor;
+            this.icon = icon;
+        }
     }
 }

@@ -45,6 +45,7 @@ public class ImageEditScreen extends Screen {
     private final ImageEntry entry;
     private final Consumer<ImageEntry> onSave;
     private final DecimalFormat df = new DecimalFormat("0.00");
+    ScrollablePanel scrollPanel;
     // 控件
     private TextFieldWidget pathInput;
     private ButtonWidget browseButton;
@@ -57,7 +58,6 @@ public class ImageEditScreen extends Screen {
     private ButtonWidget modeButton;
     private ButtonWidget doneButton;
     private int modeIndex = 0;
-    ScrollablePanel scrollPanel;
     // 预览相关
     private int previewSize = 150;
     private int previewX, previewY;
@@ -139,18 +139,18 @@ public class ImageEditScreen extends Screen {
         this.addDrawableChild(this.scrollPanel);
 
         // ---- 在面板中添加控件（坐标相对于面板内部） ----
-        int offsetY = 0;
+        int offsetY = 2;
 
         // 1) 路径输入 + 浏览按钮
-        int pathWidth = panelWidth - 24;
-        this.pathInput = new TextFieldWidget(this.textRenderer, 0, offsetY, pathWidth, 20, Text.literal("图片路径"));
+        int pathWidth = panelWidth - 26;
+        this.pathInput = new TextFieldWidget(this.textRenderer, 2, offsetY, pathWidth, 18, Text.literal("图片路径"));
         this.pathInput.setMaxLength(Integer.MAX_VALUE);
         this.pathInput.setText(entry.getPath());
         this.scrollPanel.addWidget(this.pathInput);
 
         this.browseButton = ButtonWidget.builder(
                 Text.literal("..."), (btn) -> this.openFileChooser()
-        ).position(pathWidth + 4, offsetY).size(20, 20).tooltip(Tooltip.of(Text.translatable("overlayer.screen.button.select_file.tooltip"))).build();
+        ).position(pathWidth + 6, offsetY - 1).size(20, 20).tooltip(Tooltip.of(Text.translatable("overlayer.screen.button.select_file.tooltip"))).build();
         this.scrollPanel.addWidget(this.browseButton);
 
         offsetY += 28 + spacing;
@@ -184,7 +184,7 @@ public class ImageEditScreen extends Screen {
         offsetY += 20 + spacing;
 
         // 4) 图层输入框
-        this.layerInput = new TextFieldWidget(this.textRenderer, 0, offsetY, panelWidth, 20, Text.literal("图层"));
+        this.layerInput = new TextFieldWidget(this.textRenderer, 2, offsetY, panelWidth - 4, 18, Text.literal("图层"));
         this.layerInput.setText(String.valueOf(entry.getLayer()));
         this.layerInput.setTextPredicate(s -> s.matches("\\d*"));
         this.layerInput.setMaxLength(6);
@@ -214,7 +214,7 @@ public class ImageEditScreen extends Screen {
     // ========== 渲染 ==========
     @Override
     public void render(@NotNull DrawContext context, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(context, mouseX, mouseY, partialTick);
+        this.renderBackground(context);
         super.render(context, mouseX, mouseY, partialTick);
 
         String currentPath = this.pathInput.getText();
@@ -336,6 +336,18 @@ public class ImageEditScreen extends Screen {
     @Override
     public void close() {
         this.cancel();
+    }
+
+    @Override
+    public void removed() {
+        super.removed();
+        if (this.scrollPanel != null) {
+            this.scrollPanel.clearChildren();
+            this.scrollPanel = null;
+        }
+        if (this.doneButton != null) {
+            this.doneButton = null;
+        }
     }
 
     @Override

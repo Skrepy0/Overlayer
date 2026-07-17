@@ -15,17 +15,17 @@ import net.minecraft.util.Identifier;
 public class Overlayer implements ModInitializer {
     public static final String MOD_ID = "overlayer";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-    public static Path GAME_DIR;
     public static final List<String> validFormat = List.of("png", "jpg", "jpeg", "bmp", "tif", "tiff", "ico", "pcx", "gif");
+    public static Path GAME_DIR;
+
+    public static Identifier id(String path) {
+        return Identifier.of(MOD_ID, path);
+    }
 
     @Override
     public void onInitialize() {
         GAME_DIR = FabricLoader.getInstance().getGameDir();
         LOGGER.info("GAME_DIR:{}", GAME_DIR);
         OverlayerManager.getInstance().load();
-    }
-
-    public static Identifier id(String path) {
-        return Identifier.of(MOD_ID, path);
     }
 }

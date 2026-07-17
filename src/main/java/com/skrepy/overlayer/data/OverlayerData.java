@@ -14,6 +14,10 @@ public class OverlayerData {
         return imageInstances;
     }
 
+    public void setImageInstances(List<ImageEntry> imageInstances) {
+        this.imageInstances = imageInstances;
+    }
+
     public int getTitleScreenBtnXOffset() {
         return titleScreenBtnXOffset;
     }
@@ -44,9 +48,5 @@ public class OverlayerData {
 
     public void setOptionsScreenBtnYOffset(int optionsScreenBtnYOffset) {
         this.optionsScreenBtnYOffset = optionsScreenBtnYOffset;
-    }
-
-    public void setImageInstances(List<ImageEntry> imageInstances) {
-        this.imageInstances = imageInstances;
     }
 }

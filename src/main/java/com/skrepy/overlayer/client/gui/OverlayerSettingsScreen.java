@@ -13,6 +13,7 @@ import com.skrepy.overlayer.manager.OverlayerManager;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ConfirmScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.tooltip.Tooltip;
@@ -59,21 +60,20 @@ public class OverlayerSettingsScreen extends Screen {
         super.init();
 
         titleY = 20;
-        // 使用 TextWidget，并修正 getWidth
         this.titleWidget = new TextWidget(TITLE, this.textRenderer);
         this.titleWidget.setX(this.width / 2 - this.textRenderer.getWidth(TITLE) / 2);
         this.titleWidget.setY(titleY);
         this.addDrawableChild(this.titleWidget);
 
         inputY = titleY + 30;
-        this.pathInput = new TextFieldWidget(this.textRenderer, this.width / 2 - 110, inputY, 200, 20, Text.literal("输入图片路径"));
+        this.pathInput = new TextFieldWidget(this.textRenderer, this.width / 2 - 110, inputY, 200, 20, Text.empty());
         this.pathInput.setMaxLength(Integer.MAX_VALUE);
-        this.addDrawableChild(this.pathInput);
+
 
         this.browseButton = ButtonWidget.builder(
                 Text.literal("..."), (btn) -> this.openFileChooser()
         ).position(this.width / 2 + 95, inputY).size(20, 20).tooltip(Tooltip.of(Text.translatable("overlayer.screen.button.select_file.tooltip"))).build();
-        this.addDrawableChild(this.browseButton);
+
 
         int buttonRowY = this.height - 30;
         int totalWidth = BUTTON_WIDTH * 3 + 8;
@@ -89,10 +89,11 @@ public class OverlayerSettingsScreen extends Screen {
         this.addDrawableChild(this.clearButton);
 
         // 创建 ImageList
-        this.list = new ImageList(this.client, 0, 0, 0, LIST_ENTRY_HEIGHT, this.textRenderer, this::removeEntry, this::openEditScreen);
+        this.list = new ImageList(this.client, 0, 0, 0, 0, LIST_ENTRY_HEIGHT, this.textRenderer, this::removeEntry, this::openEditScreen);
         this.list.updateEntries(this.imageEntries);
         this.addDrawableChild(this.list);
-
+        this.addDrawableChild(this.pathInput);
+        this.addDrawableChild(this.browseButton);
         this.updateLayout();
     }
 
@@ -138,8 +139,12 @@ public class OverlayerSettingsScreen extends Screen {
         int listHeight = listBottom - listTop;
         if (listHeight < 0) listHeight = 0;
 
-        this.list.setDimensions(listWidth, listHeight);
-        this.list.setPosition(10, listTop);
+        this.list.updateSize(listWidth, listHeight, listTop, listTop + listHeight); // 假设底部为 top+height
+        this.list.setLeftPos(10);
+
+        this.pathInput.setVisible(true);
+        this.pathInput.setDrawsBackground(true);
+        this.pathInput.setEditable(true);
     }
 
     @Override
@@ -215,6 +220,12 @@ public class OverlayerSettingsScreen extends Screen {
                     }, Text.translatable("overlayer.screen.delete_confirm.title"), Text.translatable("overlayer.screen.delete_confirm.meg"), Text.translatable("overlayer.screen.common.delete"), ScreenTexts.CANCEL
             ));
         }
+    }
+
+    @Override
+    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        this.renderBackground(context);
+        super.render(context, mouseX, mouseY, delta);
     }
 
     private void clearList() {

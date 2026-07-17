@@ -49,7 +49,7 @@ public class ScrollablePanel extends ClickableWidget {
     }
 
     @Override
-    protected void renderWidget(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
+    public void renderButton(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
         context.enableScissor(getX(), getY(), getX() + getWidth(), getY() + getHeight());
         updateAllPositions();
 
@@ -120,14 +120,14 @@ public class ScrollablePanel extends ClickableWidget {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
         if (!isMouseOver(mouseX, mouseY)) return false;
         if (focusedChild != null && focusedChild.isMouseOver(mouseX, mouseY)) {
-            return focusedChild.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+            return focusedChild.mouseScrolled(mouseX, mouseY, amount);
         }
         int maxScroll = Math.max(0, contentHeight - getHeight());
         if (maxScroll == 0) return false;
-        scrollOffset = (int) Math.max(0, Math.min(maxScroll, scrollOffset - verticalAmount * 15));
+        scrollOffset = (int) Math.max(0, Math.min(maxScroll, scrollOffset - amount * 15));
         updateAllPositions();
         return true;
     }
@@ -178,6 +178,12 @@ public class ScrollablePanel extends ClickableWidget {
 
     @Override
     protected void appendClickableNarrations(NarrationMessageBuilder builder) {
+    }
+
+    public void clearChildren() {
+        this.children.clear();
+        this.focusedChild = null;
+        this.dragging = false;
     }
 
     private record ChildEntry(Element widget, int relX, int relY) {

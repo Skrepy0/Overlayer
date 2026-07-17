@@ -29,30 +29,6 @@ public class OverlayerManager {
         return INSTANCE;
     }
 
-    public List<ImageEntry> getInstances() {
-        return instances;
-    }
-
-    public void load() {
-        instances.clear();
-        OverlayerData data = OverlayerDataManager.load();
-        instances.addAll(data.getImageInstances());
-        Config.setTitleScreenBtnXOffset(data.getTitleScreenBtnXOffset());
-        Config.setTitleScreenBtnYOffset(data.getTitleScreenBtnYOffset());
-        Config.setOptionsScreenBtnXOffset(data.getOptionsScreenBtnXOffset());
-        Config.setOptionsScreenBtnYOffset(data.getOptionsScreenBtnYOffset());
-    }
-
-    public void save() {
-        OverlayerData data = new OverlayerData();
-        data.setImageInstances(new ArrayList<>(instances));
-        data.setTitleScreenBtnXOffset(Config.getTitleScreenBtnXOffset());
-        data.setTitleScreenBtnYOffset(Config.getTitleScreenBtnYOffset());
-        data.setOptionsScreenBtnXOffset(Config.getOptionsScreenBtnXOffset());
-        data.setOptionsScreenBtnYOffset(Config.getOptionsScreenBtnYOffset());
-        OverlayerDataManager.save(data);
-    }
-
     public static String getFileExtension(String filePath) {
         if (filePath == null || filePath.isEmpty()) {
             return "";
@@ -85,6 +61,30 @@ public class OverlayerManager {
         return TinyFileDialogs.tinyfd_openFileDialog(
                 Text.translatable("overlayer.screen.common.select_pic").getString(), null, filterPatterns, null, false
         );
+    }
+
+    public List<ImageEntry> getInstances() {
+        return instances;
+    }
+
+    public void load() {
+        instances.clear();
+        OverlayerData data = OverlayerDataManager.load();
+        instances.addAll(data.getImageInstances());
+        Config.setTitleScreenBtnXOffset(data.getTitleScreenBtnXOffset());
+        Config.setTitleScreenBtnYOffset(data.getTitleScreenBtnYOffset());
+        Config.setOptionsScreenBtnXOffset(data.getOptionsScreenBtnXOffset());
+        Config.setOptionsScreenBtnYOffset(data.getOptionsScreenBtnYOffset());
+    }
+
+    public void save() {
+        OverlayerData data = new OverlayerData();
+        data.setImageInstances(new ArrayList<>(instances));
+        data.setTitleScreenBtnXOffset(Config.getTitleScreenBtnXOffset());
+        data.setTitleScreenBtnYOffset(Config.getTitleScreenBtnYOffset());
+        data.setOptionsScreenBtnXOffset(Config.getOptionsScreenBtnXOffset());
+        data.setOptionsScreenBtnYOffset(Config.getOptionsScreenBtnYOffset());
+        OverlayerDataManager.save(data);
     }
 
     public void addInstance(ImageEntry entry) {

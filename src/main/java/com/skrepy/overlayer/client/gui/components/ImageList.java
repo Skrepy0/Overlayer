@@ -28,8 +28,8 @@ public class ImageList extends EntryListWidget<ImageList.Entry> {
     private final Consumer<ImageEntry> onRemove;
     private final Consumer<ImageEntry> onEdit;
 
-    public ImageList(MinecraftClient client, int width, int height, int top, int itemHeight, TextRenderer textRenderer, Consumer<ImageEntry> onRemove, Consumer<ImageEntry> onEdit) {
-        super(client, width, height, top, itemHeight);
+    public ImageList(MinecraftClient client, int width, int height, int top, int bottom, int itemHeight, TextRenderer textRenderer, Consumer<ImageEntry> onRemove, Consumer<ImageEntry> onEdit) {
+        super(client, width, height, top, bottom, itemHeight);
         this.textRenderer = textRenderer;
         this.onRemove = onRemove;
         this.onEdit = onEdit;
@@ -48,32 +48,29 @@ public class ImageList extends EntryListWidget<ImageList.Entry> {
     }
 
     @Override
-    protected int getScrollbarX() {
-        return this.getX() + this.width - 8;
-    }
-
-    @Override
-    public void renderWidget(@NotNull DrawContext context, int mouseX, int mouseY, float delta) {
-        super.renderWidget(context, mouseX, mouseY, delta);
+    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        super.render(context, mouseX, mouseY, delta);
         if (this.getEntryCount() == 0) {
             context.drawCenteredTextWithShadow(
-                    textRenderer, EMPTY_TEXT, this.getX() + this.width / 2, this.getY() + this.height / 2 - 5, 0x888888
+                    textRenderer, EMPTY_TEXT, this.left + this.width / 2, this.top + this.height / 2 - 5, 0x888888
             );
         }
     }
 
+    @Override
+    protected int getScrollbarPositionX() {
+        return this.left + this.width - 8;
+    }
+
     // ========== 实现抽象方法 ==========
     @Override
-    public void appendClickableNarrations(NarrationMessageBuilder builder) {
-        // 添加列表本身的叙述
+    public void appendNarrations(NarrationMessageBuilder builder) {
         builder.put(NarrationPart.TITLE, Text.translatable("narrator.screen.list"));
-        // 如果有选中条目，可以添加其叙述
         if (this.getSelectedOrNull() != null) {
             builder.put(NarrationPart.HINT, Text.literal("选中条目: " + this.getSelectedOrNull().getNarration().getString()));
         }
     }
 
-    // ---------- 内部类 Entry ----------
     public class Entry extends EntryListWidget.Entry<Entry> {
         private final ImageEntry imageEntry;
         private final int number;
@@ -85,7 +82,6 @@ public class ImageList extends EntryListWidget<ImageList.Entry> {
             this.numberText = Text.literal(String.valueOf(number));
         }
 
-        // 注意：此方法不是重写，是自定义方法，不要加 @Override
         public @NotNull Text getNarration() {
             return Text.literal("图片条目 " + number);
         }

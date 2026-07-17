@@ -78,7 +78,7 @@ public abstract class OptionsScreenMixin extends Screen {
         overlayer$customButton.setY(newY);
     }
 
-    @Inject(method = "initTabNavigation", at = @At("TAIL"))
+    @Inject(method = "init", at = @At("TAIL"))
     private void onRepositionElements(CallbackInfo ci) {
         OptionsScreen screen = (OptionsScreen) (Object) this;
         overlayer$updateCustomButtonPosition(screen);

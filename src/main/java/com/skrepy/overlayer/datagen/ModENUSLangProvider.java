@@ -1,19 +1,16 @@
 package com.skrepy.overlayer.datagen;
 
-import java.util.concurrent.CompletableFuture;
-
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricLanguageProvider;
-import net.minecraft.registry.RegistryWrapper;
 
 public class ModENUSLangProvider extends FabricLanguageProvider {
 
-    public ModENUSLangProvider(FabricDataOutput dataOutput, CompletableFuture<RegistryWrapper.WrapperLookup> registryLookup) {
-        super(dataOutput, "en_us", registryLookup);
+    public ModENUSLangProvider(FabricDataOutput dataOutput) {
+        super(dataOutput, "en_us");
     }
 
     @Override
-    public void generateTranslations(RegistryWrapper.WrapperLookup registryLookup, TranslationBuilder translationBuilder) {
+    public void generateTranslations(TranslationBuilder translationBuilder) {
         translationBuilder.add("category.overlayer.general", "Overlayer General Configuration");
         translationBuilder.add("key.overlayer.toggle_show_status", "Toggle Instance Display Status");
         translationBuilder.add("overlayer.configuration.title", "Overlayer");

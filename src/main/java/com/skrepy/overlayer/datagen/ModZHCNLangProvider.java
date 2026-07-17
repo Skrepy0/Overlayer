@@ -1,18 +1,15 @@
 package com.skrepy.overlayer.datagen;
 
-import java.util.concurrent.CompletableFuture;
-
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricLanguageProvider;
-import net.minecraft.registry.RegistryWrapper;
 
 public class ModZHCNLangProvider extends FabricLanguageProvider {
-    public ModZHCNLangProvider(FabricDataOutput dataOutput, CompletableFuture<RegistryWrapper.WrapperLookup> registryLookup) {
-        super(dataOutput, "zh_cn", registryLookup);
+    public ModZHCNLangProvider(FabricDataOutput dataOutput) {
+        super(dataOutput, "zh_cn");
     }
 
     @Override
-    public void generateTranslations(RegistryWrapper.WrapperLookup registryLookup, TranslationBuilder translationBuilder) {
+    public void generateTranslations(TranslationBuilder translationBuilder) {
         translationBuilder.add("category.overlayer.general", "Overlayer通用配置");
         translationBuilder.add("key.overlayer.toggle_show_status", "切换实例显示状态");
         translationBuilder.add("overlayer.configuration.title", "Overlayer");
