@@ -6,6 +6,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.skrepy.overlayer.Config;
+import com.skrepy.overlayer.OverlayerClient;
 import com.skrepy.overlayer.render.OverlayRenderer;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -18,7 +19,8 @@ public class AbstractContainerScreenMixin {
         if (!Config.isIsOpenContainerScreen()) {
             Config.setIsOpenContainerScreen(true);
         }
-        OverlayRenderer.renderOverlays(graphics, partialTick);
+        if (OverlayerClient.overlayVisible)
+            OverlayRenderer.renderOverlays(graphics, partialTick);
     }
 
     @Inject(method = "removed", at = @At("RETURN"))

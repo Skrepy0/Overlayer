@@ -12,6 +12,8 @@ public class ENUSLanProvider extends LanguageProvider {
 
     @Override
     protected void addTranslations() {
+        add("key.category.overlayer.general", "Overlayer General Configuration");
+        add("key.overlayer.toggle_show_status", "Toggle Instance Display Status");
         add("overlayer.configuration.title", "Overlayer");
 
         add("overlayer.configuration.titleScreenBtnXOffset", "Title Screen Button X Offset");

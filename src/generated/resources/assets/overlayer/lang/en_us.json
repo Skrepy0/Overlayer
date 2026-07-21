@@ -1,4 +1,6 @@
 {
+  "key.category.overlayer.general": "Overlayer General Configuration",
+  "key.overlayer.toggle_show_status": "Toggle Instance Display Status",
   "overlayer.configuration.optionsScreenBtnXOffset": "Options Screen Button X Offset",
   "overlayer.configuration.optionsScreenBtnYOffset": "Options Screen Button Y Offset",
   "overlayer.configuration.title": "Overlayer",

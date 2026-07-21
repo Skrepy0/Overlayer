@@ -13,6 +13,8 @@ public class ZHCNLanProvider extends LanguageProvider {
 
     @Override
     protected void addTranslations() {
+        add("key.category.overlayer.general", "Overlayer通用配置");
+        add("key.overlayer.toggle_show_status", "切换实例显示状态");
         add("overlayer.configuration.title", "Overlayer");
 
         add("overlayer.configuration.titleScreenBtnXOffset", "主界面按钮X轴偏移");
