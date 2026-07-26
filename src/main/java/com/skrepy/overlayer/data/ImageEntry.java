@@ -1,7 +1,6 @@
 package com.skrepy.overlayer.data;
 
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.file.Path;
@@ -21,7 +20,6 @@ import com.skrepy.overlayer.data.loader.LoaderHelper;
 import com.skrepy.overlayer.data.loader.StaticImageLoader;
 
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.texture.DynamicTexture;
 import net.minecraft.client.texture.NativeImage;
 import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.client.texture.TextureManager;
