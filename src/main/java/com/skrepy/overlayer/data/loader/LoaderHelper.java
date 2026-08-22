@@ -16,15 +16,20 @@ public class LoaderHelper {
         // Bulk read all pixels at once to minimize JNI boundary crossings
         int[] pixels = image.getRGB(0, 0, w, h, null, 0, w);
 
-        // Convert ARGB to ABGR in bulk
+        // Convert ARGB to ABGR using incrementing counters instead of modulo/division
+        int x = 0, y = 0;
         for (int i = 0; i < pixels.length; i++) {
             int argb = pixels[i];
             int a = (argb >> 24) & 0xFF;
             int r = (argb >> 16) & 0xFF;
             int g = (argb >> 8) & 0xFF;
             int b = argb & 0xFF;
-            int abgr = (a << 24) | (b << 16) | (g << 8) | r;
-            nativeImage.setPixelRGBA(i % w, i / w, abgr);
+            nativeImage.setPixelRGBA(x, y, (a << 24) | (b << 16) | (g << 8) | r);
+            x++;
+            if (x >= w) {
+                x = 0;
+                y++;
+            }
         }
         return nativeImage;
     }

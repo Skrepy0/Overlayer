@@ -203,7 +203,7 @@ public class ImageEntry {
      * @return 如果已缓存则立即返回纹理，否则返回 null（加载中/失败）
      */
     @Nullable
-    public synchronized ResourceLocation getThumbnail(TextureManager textureManager, @Nullable Runnable onLoaded) {
+    public ResourceLocation getThumbnail(TextureManager textureManager, @Nullable Runnable onLoaded) {
         if (thumbnailTexture != null) return thumbnailTexture;
         if (loadingThumbnail || thumbnailFailed) return null;
 
@@ -294,7 +294,7 @@ public class ImageEntry {
 
     // ---------- 主纹理获取 ----------
     @Nullable
-    public synchronized ResourceLocation getCurrentFrame(TextureManager textureManager, float partialTick) {
+    public ResourceLocation getCurrentFrame(TextureManager textureManager, float partialTick) {
         Path absPath = getAbsolutePath();
         if (absPath == null) {
             LOGGER.warn("Cannot get absolute path: id={}, path={}", id, path);

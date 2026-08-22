@@ -79,7 +79,7 @@ public class GifLoader {
     /**
      * 异步加载 GIF，解码在后台线程，纹理注册在主线程
      */
-    public synchronized void loadAsync(TextureManager textureManager) {
+    public void loadAsync(TextureManager textureManager) {
         if (gifLoading || gifLoaded) return;
         if (absolutePath == null) {
             LOGGER.error("absolutePath is null, cannot load: id={}", id);
@@ -216,7 +216,7 @@ public class GifLoader {
     }
 
     @Nullable
-    public synchronized ResourceLocation getCurrentFrame() {
+    public ResourceLocation getCurrentFrame() {
         if (!gifLoaded) return null;
         if (gifTextures == null || gifTextures.isEmpty()) return null;
         if (gifTotalDelay == 0) return gifTextures.getFirst();

@@ -4,21 +4,21 @@ import static com.skrepy.overlayer.Overlayer.validFormat;
 import static com.skrepy.overlayer.manager.OverlayerManager.*;
 
 import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import javax.imageio.ImageIO;
+import javax.imageio.stream.ImageInputStream;
 
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.system.MemoryStack;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.skrepy.overlayer.Overlayer;
 import com.skrepy.overlayer.client.gui.components.ScrollablePanel;
 import com.skrepy.overlayer.data.ImageEntry;
 import com.skrepy.overlayer.manager.OverlayerManager;
@@ -46,6 +46,8 @@ public class ImageEditScreen extends Screen {
     private final ImageEntry entry;
     private final Consumer<ImageEntry> onSave;
     private final DecimalFormat df = new DecimalFormat("0.00");
+    // 预览加载状态（避免重复触发）
+    private final AtomicBoolean previewLoading = new AtomicBoolean(false);
     // 控件
     private EditBox pathInput;
     private Button browseButton;
@@ -353,7 +355,7 @@ public class ImageEditScreen extends Screen {
         return true;
     }
 
-    // ========== 预览尺寸加载 ==========
+    // ========== 预览尺寸加载（仅读取图片头部，不解码像素） ==========
     private void loadPreviewDimension(String path) {
         if (path == null || path.isEmpty()) {
             currentPreviewPath = null;
@@ -361,7 +363,7 @@ public class ImageEditScreen extends Screen {
             previewFileExists = false;
             return;
         }
-        if (path.equals(currentPreviewPath) && !previewFileExists) {
+        if (path.equals(currentPreviewPath)) {
             return;
         }
         Path filePath = Paths.get(path);
@@ -369,26 +371,42 @@ public class ImageEditScreen extends Screen {
             currentPreviewPath = path;
             currentPreviewDimension = null;
             previewFileExists = false;
-            Overlayer.LOGGER.debug("预览文件不存在或不可读: {}", path);
             return;
         }
-        try (InputStream is = Files.newInputStream(filePath)) {
-            BufferedImage img = ImageIO.read(is);
-            if (img != null) {
-                currentPreviewDimension = new Dimension(img.getWidth(), img.getHeight());
+        // 避免重复加载
+        if (!previewLoading.compareAndSet(false, true)) {
+            return;
+        }
+        // 异步读取图片尺寸（仅读取头部元数据）
+        CompletableFuture.runAsync(() -> {
+            try (ImageInputStream iis = ImageIO.createImageInputStream(Files.newInputStream(filePath))) {
+                if (iis == null) {
+                    return;
+                }
+                java.util.Iterator<javax.imageio.ImageReader> readers = ImageIO.getImageReaders(iis);
+                if (readers.hasNext()) {
+                    javax.imageio.ImageReader reader = readers.next();
+                    try {
+                        reader.setInput(iis, true, true);
+                        int w = reader.getWidth(0);
+                        int h = reader.getHeight(0);
+                        if (w > 0 && h > 0) {
+                            currentPreviewDimension = new Dimension(w, h);
+                            currentPreviewPath = path;
+                            previewFileExists = true;
+                        }
+                    } finally {
+                        reader.dispose();
+                    }
+                }
+            } catch (Exception e) {
                 currentPreviewPath = path;
-                previewFileExists = true;
-                Overlayer.LOGGER.debug("成功加载预览图片尺寸: {} x {}", img.getWidth(), img.getHeight());
-            } else {
                 currentPreviewDimension = null;
                 previewFileExists = false;
-                Overlayer.LOGGER.warn("无法解码图片文件: {}", path);
+            } finally {
+                previewLoading.set(false);
             }
-        } catch (Exception e) {
-            currentPreviewDimension = null;
-            previewFileExists = false;
-            Overlayer.LOGGER.debug("加载预览图片尺寸失败: {}", path, e);
-        }
+        });
     }
 
     // ========== 自定义滑块内部类（标记修改） ==========

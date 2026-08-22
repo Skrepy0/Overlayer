@@ -63,7 +63,7 @@ public class StaticImageLoader {
      * - 若未开始加载，则启动异步加载，返回 null。
      */
     @Nullable
-    public synchronized ResourceLocation getOrLoad(TextureManager textureManager) {
+    public ResourceLocation getOrLoad(TextureManager textureManager) {
         if (loaded && texture != null) {
             return texture;
         }
@@ -78,7 +78,7 @@ public class StaticImageLoader {
     /**
      * 异步加载图片，纹理注册将在主线程完成。
      */
-    public synchronized void loadAsync(TextureManager textureManager) {
+    public void loadAsync(TextureManager textureManager) {
         if (loading || loaded) return;
         if (absolutePath == null) {
             LOGGER.error("absolutePath is null, cannot load: id={}", id);
