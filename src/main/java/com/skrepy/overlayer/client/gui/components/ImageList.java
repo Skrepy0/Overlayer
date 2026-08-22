@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 
 import org.jetbrains.annotations.NotNull;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.skrepy.overlayer.data.ImageEntry;
 
 import net.minecraft.client.Minecraft;
@@ -86,7 +87,10 @@ public class ImageList extends ObjectSelectionList<ImageList.Entry> {
             int thumbSize = height - 4;
             ResourceLocation tex = imageEntry.getThumbnail(Minecraft.getInstance().getTextureManager(), null);
             if (tex != null) {
+                RenderSystem.enableBlend();
+                RenderSystem.defaultBlendFunc();
                 guiGraphics.blit(tex, thumbX, thumbY, 0, 0, thumbSize, thumbSize, thumbSize, thumbSize);
+                RenderSystem.disableBlend();
             } else {
                 guiGraphics.fill(thumbX, thumbY, thumbX + thumbSize, thumbY + thumbSize, 0xFF888888);
                 guiGraphics.drawString(font, "?", thumbX + thumbSize / 2 - 4, thumbY + thumbSize / 2 - 4, 0xFFFFFF);
