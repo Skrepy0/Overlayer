@@ -18,8 +18,7 @@ public class LoaderHelper {
 
         // Convert ARGB to ABGR using incrementing counters instead of modulo/division
         int x = 0, y = 0;
-        for (int i = 0; i < pixels.length; i++) {
-            int argb = pixels[i];
+        for (int argb : pixels) {
             int a = (argb >> 24) & 0xFF;
             int r = (argb >> 16) & 0xFF;
             int g = (argb >> 8) & 0xFF;
