@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 
 import org.jetbrains.annotations.NotNull;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.skrepy.overlayer.data.ImageEntry;
 
 import net.fabricmc.api.EnvType;
@@ -101,7 +102,10 @@ public class ImageList extends EntryListWidget<ImageList.Entry> {
             int thumbSize = entryHeight - 4;
             Identifier tex = imageEntry.getThumbnail(MinecraftClient.getInstance().getTextureManager(), null);
             if (tex != null) {
+                RenderSystem.enableBlend();
+                RenderSystem.defaultBlendFunc();
                 context.drawTexture(tex, thumbX, thumbY, 0, 0, thumbSize, thumbSize, thumbSize, thumbSize);
+                RenderSystem.disableBlend();
             } else {
                 context.fill(thumbX, thumbY, thumbX + thumbSize, thumbY + thumbSize, 0xFF888888);
                 context.drawText(font, "?", thumbX + thumbSize / 2 - 4, thumbY + thumbSize / 2 - 4, 0xFFFFFF, false);
