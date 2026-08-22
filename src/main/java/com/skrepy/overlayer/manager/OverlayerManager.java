@@ -14,6 +14,7 @@ import com.skrepy.overlayer.Overlayer;
 import com.skrepy.overlayer.data.ImageEntry;
 import com.skrepy.overlayer.data.OverlayerData;
 import com.skrepy.overlayer.data.OverlayerDataManager;
+import com.skrepy.overlayer.render.OverlayRenderer;
 
 import net.minecraft.network.chat.Component;
 
@@ -26,22 +27,6 @@ public class OverlayerManager {
 
     public static OverlayerManager getInstance() {
         return INSTANCE;
-    }
-
-    public List<ImageEntry> getInstances() {
-        return instances;
-    }
-
-    public void load() {
-        instances.clear();
-        OverlayerData data = OverlayerDataManager.load();
-        instances.addAll(data.getImageInstances());
-    }
-
-    public void save() {
-        OverlayerData data = new OverlayerData();
-        data.setImageInstances(new ArrayList<>(instances));
-        OverlayerDataManager.save(data);
     }
 
     public static String getFileExtension(String filePath) {
@@ -78,17 +63,36 @@ public class OverlayerManager {
         );
     }
 
+    public List<ImageEntry> getInstances() {
+        return instances;
+    }
+
+    public void load() {
+        instances.clear();
+        OverlayerData data = OverlayerDataManager.load();
+        instances.addAll(data.getImageInstances());
+    }
+
+    public void save() {
+        OverlayerData data = new OverlayerData();
+        data.setImageInstances(new ArrayList<>(instances));
+        OverlayerDataManager.save(data);
+    }
+
     public void addInstance(ImageEntry entry) {
         instances.add(entry);
+        OverlayRenderer.invalidateSortCache();
         save();
     }
 
     public void removeInstance(ImageEntry entry) {
         instances.remove(entry);
+        OverlayRenderer.invalidateSortCache();
         save();
     }
 
     public void updateInstance(ImageEntry entry) {
+        OverlayRenderer.invalidateSortCache();
         save();
     }
 }

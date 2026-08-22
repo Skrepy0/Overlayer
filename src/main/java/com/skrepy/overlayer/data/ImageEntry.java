@@ -44,13 +44,15 @@ public class ImageEntry {
     private double scale;
     private double alpha;
     private int layer;
-
     // ---------- transient 缓存 ----------
     private transient volatile StaticImageLoader staticLoader;
     private transient volatile GifLoader gifLoader;
     private transient volatile ResourceLocation thumbnailTexture;
     private transient volatile boolean loadingThumbnail = false;
     private transient volatile boolean thumbnailFailed = false;
+    private transient volatile Path cachedAbsolutePath;
+    private transient volatile String cachedPathForAbsPath;
+    private transient volatile Boolean gifFileCache;
 
     // ---------- 构造方法 ----------
     public ImageEntry(int id, String path) {
@@ -69,6 +71,10 @@ public class ImageEntry {
         LOGGER.debug("ImageEntry created: id={}, path={}", id, path);
     }
 
+    public static void shutdownExecutor() {
+        THUMBNAIL_EXECUTOR.shutdownNow();
+    }
+
     // ---------- Getter / Setter ----------
     public int getId() {
         return id;
@@ -84,15 +90,27 @@ public class ImageEntry {
 
     public void setPath(String path) {
         this.path = path;
+        invalidatePathCache();
         clearCache();
         LOGGER.debug("Path updated: id={}, newPath={}", id, path);
     }
 
     public Path getAbsolutePath() {
         if (path == null || path.isEmpty()) return null;
+        if (cachedAbsolutePath != null && path.equals(cachedPathForAbsPath)) {
+            return cachedAbsolutePath;
+        }
         Path p = Paths.get(path);
-        if (p.isAbsolute()) return p.normalize();
-        return Overlayer.GAME_DIR.resolve(path).normalize();
+        Path result = p.isAbsolute() ? p.normalize() : Overlayer.GAME_DIR.resolve(path).normalize();
+        cachedAbsolutePath = result;
+        cachedPathForAbsPath = path;
+        return result;
+    }
+
+    private void invalidatePathCache() {
+        cachedAbsolutePath = null;
+        cachedPathForAbsPath = null;
+        gifFileCache = null;
     }
 
     public int getXOffset() {
@@ -253,16 +271,23 @@ public class ImageEntry {
 
     // ---------- 缓存清理 ----------
     public void clearCache() {
+        clearCache(Minecraft.getInstance().getTextureManager());
+    }
+
+    public void clearCache(TextureManager textureManager) {
         LOGGER.debug("Clearing cache: id={}, path={}", id, path);
         if (staticLoader != null) {
-            staticLoader.clearCache();
+            staticLoader.clearCache(textureManager);
             staticLoader = null;
         }
         if (gifLoader != null) {
-            gifLoader.clearCache();
+            gifLoader.clearCache(textureManager);
             gifLoader = null;
         }
-        thumbnailTexture = null;
+        if (thumbnailTexture != null) {
+            textureManager.release(thumbnailTexture);
+            thumbnailTexture = null;
+        }
         thumbnailFailed = false;
         loadingThumbnail = false;
     }
@@ -296,6 +321,9 @@ public class ImageEntry {
     }
 
     private boolean isGifFile() {
-        return path != null && path.toLowerCase().endsWith(".gif");
+        if (gifFileCache == null) {
+            gifFileCache = path != null && path.toLowerCase().endsWith(".gif");
+        }
+        return gifFileCache;
     }
 }

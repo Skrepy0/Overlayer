@@ -12,22 +12,6 @@ import net.neoforged.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class OverlayerToast implements Toast {
-    public enum Type {
-        INFO(0xFF2A7FFF, 0xFFFFFFFF, 0x01001F, "ℹ"), WARNING(0xFFFF8C00, 0xFFFFFFFF, 0x01001F, "⚠"), ERROR(0xFFFF1744, 0xFFFFFFFF, 0x01001F, "✕");
-
-        final int borderColor;
-        final int textColor;
-        final int bgColor;
-        final String icon;
-
-        Type(int borderColor, int textColor, int bgColor, String icon) {
-            this.borderColor = borderColor;
-            this.textColor = textColor;
-            this.bgColor = bgColor;
-            this.icon = icon;
-        }
-    }
-
     private final Component title;
     private final Component message;
     private final Type type;
@@ -123,5 +107,21 @@ public class OverlayerToast implements Toast {
     @Override
     public int height() {
         return message != null ? 44 : 32;
+    }
+
+    public enum Type {
+        INFO(0xFF2A7FFF, 0xFFFFFFFF, 0x01001F, "ℹ"), WARNING(0xFFFF8C00, 0xFFFFFFFF, 0x01001F, "⚠"), ERROR(0xFFFF1744, 0xFFFFFFFF, 0x01001F, "✕");
+
+        final int borderColor;
+        final int textColor;
+        final int bgColor;
+        final String icon;
+
+        Type(int borderColor, int textColor, int bgColor, String icon) {
+            this.borderColor = borderColor;
+            this.textColor = textColor;
+            this.bgColor = bgColor;
+            this.icon = icon;
+        }
     }
 }

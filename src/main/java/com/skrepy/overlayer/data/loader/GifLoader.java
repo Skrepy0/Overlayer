@@ -49,9 +49,10 @@ public class GifLoader {
     // 状态
     private volatile boolean gifLoaded = false;
     private volatile boolean gifLoading = false;
-    // 播放辅助
+    // Playback helpers
     private long gifStartTime = 0;
     private int lastFrameIndex = -1;
+    private int[] cumulativeDelays;
 
     public GifLoader(int id, String path, Path absolutePath) {
         this.id = id;
@@ -70,6 +71,10 @@ public class GifLoader {
         placeholderTexture = loc;
         LOGGER.debug("Placeholder texture created: {}", loc);
         return loc;
+    }
+
+    public static void shutdownExecutor() {
+        DECODER_EXECUTOR.shutdownNow();
     }
 
     /**
@@ -127,6 +132,7 @@ public class GifLoader {
             gifLoaded = true;
             gifLoading = false;
             gifStartTime = System.currentTimeMillis();
+            buildCumulativeDelays();
             LOGGER.info("GIF loaded async: id={}, frames={}, totalDelay={}ms", id, textures.size(), totalDelay);
         }, Minecraft.getInstance()).exceptionally(e -> {
             LOGGER.error("Async GIF load failed: id={}", id, e);
@@ -232,10 +238,46 @@ public class GifLoader {
         return gifTextures.get(selectedIndex);
     }
 
+    private void buildCumulativeDelays() {
+        if (gifDelays == null) return;
+        cumulativeDelays = new int[gifDelays.size()];
+        int sum = 0;
+        for (int i = 0; i < gifDelays.size(); i++) {
+            sum += gifDelays.get(i);
+            cumulativeDelays[i] = sum;
+        }
+    }
+
+    private int binarySearchFrame(int cycleTime) {
+        int low = 0;
+        int high = cumulativeDelays.length - 1;
+        while (low < high) {
+            int mid = (low + high) >>> 1;
+            if (cumulativeDelays[mid] <= cycleTime) {
+                low = mid + 1;
+            } else {
+                high = mid;
+            }
+        }
+        return low;
+    }
+
     public void clearCache() {
+        clearCache(Minecraft.getInstance().getTextureManager());
+    }
+
+    public void clearCache(TextureManager textureManager) {
         LOGGER.debug("Clearing GIF cache: id={}", id);
-        gifTextures = null;
+        if (gifTextures != null) {
+            for (ResourceLocation loc : gifTextures) {
+                if (loc != null) {
+                    textureManager.release(loc);
+                }
+            }
+            gifTextures = null;
+        }
         gifDelays = null;
+        cumulativeDelays = null;
         gifLoaded = false;
         gifLoading = false;
         gifStartTime = 0;

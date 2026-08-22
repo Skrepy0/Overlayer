@@ -1,5 +1,6 @@
 package com.skrepy.overlayer.render;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -15,6 +16,16 @@ import net.minecraft.resources.ResourceLocation;
 
 public class OverlayRenderer {
 
+    private static List<ImageEntry> sortedCache = null;
+    private static int lastSize = -1;
+    private static int lastLayerVersion = -1;
+    private static int layerVersion = 0;
+
+    public static void invalidateSortCache() {
+        sortedCache = null;
+        layerVersion++;
+    }
+
     public static void renderOverlays(GuiGraphics guiGraphics, float partialTick) {
         Minecraft mc = Minecraft.getInstance();
         List<ImageEntry> instances = OverlayerManager.getInstance().getInstances();
@@ -24,20 +35,29 @@ public class OverlayRenderer {
         int screenHeight = mc.getWindow().getGuiScaledHeight();
         TextureManager textureManager = mc.getTextureManager();
 
-        // 按图层排序（数值大的在上层）
-        instances.sort(Comparator.comparingInt(ImageEntry::getLayer));
+        // Only re-sort when list size or layer configuration changes
+        if (sortedCache == null || instances.size() != lastSize || lastLayerVersion != layerVersion) {
+            sortedCache = new ArrayList<>(instances);
+            sortedCache.sort(Comparator.comparingInt(ImageEntry::getLayer));
+            lastSize = instances.size();
+            lastLayerVersion = layerVersion;
+        }
 
-        // 判断是否在游戏中
+        // Determine if in game
         boolean inGame = mc.player != null && mc.level != null;
 
-        for (ImageEntry entry : instances) {
-            // 模式过滤
+        // Enable blend once before the loop
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+
+        for (ImageEntry entry : sortedCache) {
+            // Mode filtering
             String mode = entry.getDisplayMode();
             if ("disabled".equals(mode)) continue;
             if ("ingame".equals(mode) && !inGame) continue;
             if ("not_ingame".equals(mode) && inGame) continue;
 
-            // 获取当前帧纹理
+            // Get current frame texture
             ResourceLocation texture = entry.getCurrentFrame(textureManager, partialTick);
             if (texture == null) {
                 Overlayer.LOGGER.warn("纹理加载失败: {}", entry.getPath());
@@ -48,12 +68,15 @@ public class OverlayRenderer {
             int origHeight = entry.getOriginalHeight();
             if (origWidth <= 0 || origHeight <= 0) continue;
 
-            // 缩放
+            // Scale
             double scale = entry.getScale();
             int drawWidth = (int) (origWidth * scale);
             int drawHeight = (int) (origHeight * scale);
 
-            // 偏移
+            // Skip rotation when 0 to avoid unnecessary quaternion multiplication
+            int rotation = entry.getRotation();
+
+            // Calculate position
             double xOffsetPercent = entry.getXOffset() / 200.0;
             double yOffsetPercent = entry.getYOffset() / 200.0;
             int offsetX = (int) (screenWidth * xOffsetPercent);
@@ -61,18 +84,29 @@ public class OverlayRenderer {
             int centerX = screenWidth / 2 + offsetX;
             int centerY = screenHeight / 2 + offsetY;
 
+            // Screen bounds culling: skip if entirely off-screen
+            int left = centerX - drawWidth / 2;
+            int right = left + drawWidth;
+            int top = centerY - drawHeight / 2;
+            int bottom = top + drawHeight;
+            if (right < 0 || left > screenWidth || bottom < 0 || top > screenHeight) {
+                continue;
+            }
+
             float alpha = (float) entry.getAlpha();
 
-            RenderSystem.enableBlend();
-            RenderSystem.defaultBlendFunc();
             guiGraphics.setColor(1.0f, 1.0f, 1.0f, alpha);
             guiGraphics.pose().pushPose();
             guiGraphics.pose().translate(centerX, centerY, 0);
-            guiGraphics.pose().mulPose(com.mojang.math.Axis.ZP.rotationDegrees(entry.getRotation()));
+            if (rotation != 0) {
+                guiGraphics.pose().mulPose(com.mojang.math.Axis.ZP.rotationDegrees(rotation));
+            }
             guiGraphics.blit(texture, -drawWidth / 2, -drawHeight / 2, 0, 0, drawWidth, drawHeight, drawWidth, drawHeight);
             guiGraphics.pose().popPose();
             guiGraphics.setColor(1.0f, 1.0f, 1.0f, 1.0f);
-            RenderSystem.disableBlend();
         }
+
+        // Disable blend once after the loop
+        RenderSystem.disableBlend();
     }
 }

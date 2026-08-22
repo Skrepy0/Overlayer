@@ -6,6 +6,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.skrepy.overlayer.Config;
+import com.skrepy.overlayer.manager.OverlayerManager;
 import com.skrepy.overlayer.render.OverlayRenderer;
 
 import net.minecraft.client.DeltaTracker;
@@ -26,7 +27,7 @@ public class GuiMixin {
 
     @Inject(method = "render", at = @At("RETURN"))
     private void onRender(GuiGraphics guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
-        if (!Config.isIsOpenContainerScreen()) {
+        if (!Config.isIsOpenContainerScreen() && !OverlayerManager.getInstance().getInstances().isEmpty()) {
             float partialTick = deltaTracker.getGameTimeDeltaPartialTick(false);
             OverlayRenderer.renderOverlays(guiGraphics, partialTick);
         }

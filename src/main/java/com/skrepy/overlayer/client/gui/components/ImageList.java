@@ -50,7 +50,10 @@ public class ImageList extends ObjectSelectionList<ImageList.Entry> {
 
     @Override
     public void renderWidget(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
         super.renderWidget(guiGraphics, mouseX, mouseY, partialTick);
+        RenderSystem.disableBlend();
         if (this.getItemCount() == 0) {
             int x = this.getX() + this.width / 2 - font.width(EMPTY_TEXT) / 2;
             int y = this.getY() + this.height / 2 - 5;

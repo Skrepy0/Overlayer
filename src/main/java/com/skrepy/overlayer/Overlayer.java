@@ -6,6 +6,9 @@ import java.util.List;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
+import com.skrepy.overlayer.data.ImageEntry;
+import com.skrepy.overlayer.data.loader.GifLoader;
+import com.skrepy.overlayer.data.loader.StaticImageLoader;
 import com.skrepy.overlayer.manager.OverlayerManager;
 
 import net.neoforged.api.distmarker.Dist;
@@ -24,8 +27,8 @@ import net.neoforged.neoforge.event.server.ServerStartingEvent;
 public class Overlayer {
     public static final String MOD_ID = "overlayer";
     public static final Logger LOGGER = LogUtils.getLogger();
-    public static Path GAME_DIR;
     public static final List<String> validFormat = List.of("png", "jpg", "jpeg", "bmp", "tif", "tiff", "ico", "pcx", "gif");
+    public static Path GAME_DIR;
 
     public Overlayer(IEventBus modEventBus, ModContainer modContainer) {
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
@@ -35,6 +38,15 @@ public class Overlayer {
         GAME_DIR = FMLPaths.GAMEDIR.get();
         LOGGER.info("GAME_DIR:{}", GAME_DIR);
         OverlayerManager.getInstance().load();
+        registerShutdownHook();
+    }
+
+    private void registerShutdownHook() {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            StaticImageLoader.shutdownExecutor();
+            GifLoader.shutdownExecutor();
+            ImageEntry.shutdownExecutor();
+        }, "Overlayer-Shutdown"));
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {

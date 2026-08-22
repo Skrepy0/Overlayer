@@ -426,6 +426,8 @@ public class ImageEditScreen extends Screen {
     }
 
     private class ScaleSlider extends ExtendedSlider {
+        private double lastVal = Double.MIN_VALUE;
+
         public ScaleSlider(int x, int y, int width, int height, Component prefix, Component suffix, int minValue, int maxValue, int currentValue, int stepSize, int precision, boolean drawString) {
             super(x, y, width, height, prefix, suffix, minValue, maxValue, currentValue, stepSize, precision, drawString);
             updateMessage();
@@ -439,11 +441,16 @@ public class ImageEditScreen extends Screen {
         @Override
         protected void updateMessage() {
             double val = getValue() / 100.0;
-            setMessage(Component.translatable("overlayer.screen.image_edit.slide.zoom").append(df.format(val) + "x"));
+            if (Math.abs(val - lastVal) > 0.001) {
+                lastVal = val;
+                setMessage(Component.translatable("overlayer.screen.image_edit.slide.zoom").append(df.format(val) + "x"));
+            }
         }
     }
 
     private class AlphaSlider extends ExtendedSlider {
+        private double lastVal = Double.MIN_VALUE;
+
         public AlphaSlider(int x, int y, int width, int height, Component prefix, Component suffix, int minValue, int maxValue, int currentValue, int stepSize, int precision, boolean drawString) {
             super(x, y, width, height, prefix, suffix, minValue, maxValue, currentValue, stepSize, precision, drawString);
             updateMessage();
@@ -457,7 +464,10 @@ public class ImageEditScreen extends Screen {
         @Override
         protected void updateMessage() {
             double val = getValue() / 100.0;
-            setMessage(Component.translatable("overlayer.screen.image_edit.slide.alpha").append(df.format(val)));
+            if (Math.abs(val - lastVal) > 0.001) {
+                lastVal = val;
+                setMessage(Component.translatable("overlayer.screen.image_edit.slide.alpha").append(df.format(val)));
+            }
         }
     }
 }

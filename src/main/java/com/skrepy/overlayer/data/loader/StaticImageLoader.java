@@ -52,6 +52,10 @@ public class StaticImageLoader {
         this.absolutePath = absolutePath;
     }
 
+    public static void shutdownExecutor() {
+        DECODER_EXECUTOR.shutdownNow();
+    }
+
     /**
      * 获取纹理标识符。
      * - 若已加载完成，返回纹理。
@@ -138,7 +142,14 @@ public class StaticImageLoader {
     }
 
     public void clearCache() {
-        texture = null;
+        clearCache(Minecraft.getInstance().getTextureManager());
+    }
+
+    public void clearCache(TextureManager textureManager) {
+        if (texture != null) {
+            textureManager.release(texture);
+            texture = null;
+        }
         width = 0;
         height = 0;
         loaded = false;
