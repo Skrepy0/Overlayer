@@ -1,7 +1,7 @@
 package com.skrepy.overlayer.client.gui;
 
-import static com.skrepy.overlayer.Overlayer.validFormat;
-import static com.skrepy.overlayer.manager.OverlayerManager.*;
+import static com.skrepy.overlayer.manager.OverlayerManager.getFileExtension;
+import static com.skrepy.overlayer.manager.OverlayerManager.selectFile;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -17,6 +17,7 @@ import javax.imageio.ImageIO;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.system.MemoryStack;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.skrepy.overlayer.Overlayer;
 import com.skrepy.overlayer.client.gui.components.ScrollablePanel;
 import com.skrepy.overlayer.data.ImageEntry;
@@ -239,8 +240,10 @@ public class ImageEditScreen extends Screen {
             int drawHeight = (int) (imgHeight * scale);
             int drawX = previewX + (previewSize - drawWidth) / 2;
             int drawY = previewY + (previewSize - drawHeight) / 2;
-
+            RenderSystem.enableBlend();
+            RenderSystem.defaultBlendFunc();
             context.drawTexture(texture, drawX, drawY, 0, 0, drawWidth, drawHeight, drawWidth, drawHeight);
+            RenderSystem.disableBlend();
         } else {
             context.fill(previewX, previewY, previewX + previewSize, previewY + previewSize, 0xFF888888);
             String message;
