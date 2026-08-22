@@ -63,15 +63,6 @@ public class OverlayerDataManager {
         });
     }
 
-    public static void saveSync(OverlayerData data) {
-        saveLock.lock();
-        try {
-            performSave(data);
-        } finally {
-            saveLock.unlock();
-        }
-    }
-
     private static void performSave(OverlayerData data) {
         Path path = getDataPath();
         try {

@@ -141,10 +141,6 @@ public class StaticImageLoader {
         }
     }
 
-    public void clearCache() {
-        clearCache(Minecraft.getInstance().getTextureManager());
-    }
-
     public void clearCache(TextureManager textureManager) {
         if (texture != null) {
             textureManager.release(texture);

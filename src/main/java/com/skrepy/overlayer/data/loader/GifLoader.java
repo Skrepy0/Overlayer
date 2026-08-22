@@ -51,7 +51,6 @@ public class GifLoader {
     private volatile boolean gifLoading = false;
     // Playback helpers
     private long gifStartTime = 0;
-    private int lastFrameIndex = -1;
     private int[] cumulativeDelays;
 
     public GifLoader(int id, String path, Path absolutePath) {
@@ -225,16 +224,7 @@ public class GifLoader {
         long currentTime = System.currentTimeMillis();
         long elapsed = currentTime - gifStartTime;
         int cycleTime = (int) (elapsed % gifTotalDelay);
-        int accum = 0;
-        int selectedIndex = 0;
-        for (int i = 0; i < gifDelays.size(); i++) {
-            accum += gifDelays.get(i);
-            if (cycleTime < accum) {
-                selectedIndex = i;
-                break;
-            }
-        }
-        lastFrameIndex = selectedIndex;
+        int selectedIndex = binarySearchFrame(cycleTime);
         return gifTextures.get(selectedIndex);
     }
 
@@ -246,6 +236,7 @@ public class GifLoader {
             sum += gifDelays.get(i);
             cumulativeDelays[i] = sum;
         }
+        gifDelays = null; // Free memory, no longer needed after building cumulative array
     }
 
     private int binarySearchFrame(int cycleTime) {
@@ -262,9 +253,6 @@ public class GifLoader {
         return low;
     }
 
-    public void clearCache() {
-        clearCache(Minecraft.getInstance().getTextureManager());
-    }
 
     public void clearCache(TextureManager textureManager) {
         LOGGER.debug("Clearing GIF cache: id={}", id);
@@ -281,7 +269,6 @@ public class GifLoader {
         gifLoaded = false;
         gifLoading = false;
         gifStartTime = 0;
-        lastFrameIndex = -1;
     }
 
     public boolean isLoaded() {
@@ -300,9 +287,6 @@ public class GifLoader {
         return originalHeight;
     }
 
-    public void resetStartTime() {
-        this.gifStartTime = System.currentTimeMillis();
-    }
 
     private static class FrameData {
         List<BufferedImage> frames = new ArrayList<>();
