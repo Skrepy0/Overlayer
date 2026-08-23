@@ -59,7 +59,7 @@ public class OverlayerManager {
         filterPatterns.flip();
 
         return TinyFileDialogs.tinyfd_openFileDialog(
-                Text.translatable("overlayer.screen.common.select_pic").getString(), null, filterPatterns, null, false
+                Text.translatable("overlayer.screen.common.select_pic").getString(), "", filterPatterns, "", false
         );
     }
 
