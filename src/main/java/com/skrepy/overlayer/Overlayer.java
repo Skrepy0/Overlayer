@@ -6,6 +6,9 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.skrepy.overlayer.data.ImageEntry;
+import com.skrepy.overlayer.data.loader.GifLoader;
+import com.skrepy.overlayer.data.loader.StaticImageLoader;
 import com.skrepy.overlayer.manager.OverlayerManager;
 
 import net.fabricmc.api.ModInitializer;
@@ -15,17 +18,26 @@ import net.minecraft.util.Identifier;
 public class Overlayer implements ModInitializer {
     public static final String MOD_ID = "overlayer";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-    public static Path GAME_DIR;
     public static final List<String> validFormat = List.of("png", "jpg", "jpeg", "bmp", "tif", "tiff", "ico", "pcx", "gif");
+    public static Path GAME_DIR;
+
+    public static Identifier id(String path) {
+        return Identifier.of(MOD_ID, path);
+    }
 
     @Override
     public void onInitialize() {
         GAME_DIR = FabricLoader.getInstance().getGameDir();
         LOGGER.info("GAME_DIR:{}", GAME_DIR);
         OverlayerManager.getInstance().load();
+        registerShutdownHook();
     }
 
-    public static Identifier id(String path) {
-        return Identifier.of(MOD_ID, path);
+    private void registerShutdownHook() {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            StaticImageLoader.shutdownExecutor();
+            GifLoader.shutdownExecutor();
+            ImageEntry.shutdownExecutor();
+        }, "Overlayer-Shutdown"));
     }
 }

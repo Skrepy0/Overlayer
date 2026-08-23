@@ -11,12 +11,10 @@ import net.minecraft.screen.ScreenTexts;
 import net.minecraft.text.Text;
 
 public class ConfigScreen extends Screen {
-    private Screen parentScreen;
-
     private static final Text[] LABELS = {Text.translatable("overlayer.configuration.titleScreenBtnXOffset"), Text.translatable("overlayer.configuration.titleScreenBtnYOffset"), Text.translatable("overlayer.configuration.optionsScreenBtnXOffset"), Text.translatable("overlayer.configuration.optionsScreenBtnYOffset")
     };
-
     private final TextFieldWidget[] inputFields = new TextFieldWidget[4];
+    private Screen parentScreen;
 
     public ConfigScreen() {
         super(Text.translatable("overlayer.configuration"));
