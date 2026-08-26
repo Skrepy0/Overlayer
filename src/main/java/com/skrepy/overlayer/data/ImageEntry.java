@@ -1,10 +1,10 @@
 package com.skrepy.overlayer.data;
 
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -51,6 +51,9 @@ public class ImageEntry {
     private transient volatile Identifier thumbnailTexture;
     private transient volatile boolean loadingThumbnail = false;
     private transient volatile boolean thumbnailFailed = false;
+    private transient volatile Path cachedAbsolutePath;
+    private transient volatile String cachedPathForAbsPath;
+    private transient volatile Boolean gifFileCache;
 
     // ---------- 构造方法 ----------
     public ImageEntry(int id, String path) {
@@ -69,6 +72,10 @@ public class ImageEntry {
         LOGGER.debug("ImageEntry created: id={}, path={}", id, path);
     }
 
+    public static void shutdownExecutor() {
+        THUMBNAIL_EXECUTOR.shutdownNow();
+    }
+
     // ---------- Getter / Setter ----------
     public int getId() {
         return id;
@@ -84,13 +91,27 @@ public class ImageEntry {
 
     public void setPath(String path) {
         this.path = path;
+        invalidatePathCache();
         clearCache();
         LOGGER.debug("Path updated: id={}, newPath={}", id, path);
     }
 
     public Path getAbsolutePath() {
         if (path == null || path.isEmpty()) return null;
-        return Overlayer.GAME_DIR.resolve(path).normalize();
+        if (cachedAbsolutePath != null && path.equals(cachedPathForAbsPath)) {
+            return cachedAbsolutePath;
+        }
+        Path p = Paths.get(path);
+        Path result = p.isAbsolute() ? p.normalize() : Overlayer.GAME_DIR.resolve(path).normalize();
+        cachedAbsolutePath = result;
+        cachedPathForAbsPath = path;
+        return result;
+    }
+
+    private void invalidatePathCache() {
+        cachedAbsolutePath = null;
+        cachedPathForAbsPath = null;
+        gifFileCache = null;
     }
 
     public int getXOffset() {
@@ -183,7 +204,7 @@ public class ImageEntry {
      * @return 如果已缓存则立即返回纹理，否则返回 null（加载中/失败）
      */
     @Nullable
-    public synchronized Identifier getThumbnail(TextureManager textureManager, @Nullable Runnable onLoaded) {
+    public Identifier getThumbnail(TextureManager textureManager, @Nullable Runnable onLoaded) {
         if (thumbnailTexture != null) return thumbnailTexture;
         if (loadingThumbnail || thumbnailFailed) return null;
 
@@ -251,23 +272,30 @@ public class ImageEntry {
 
     // ---------- 缓存清理 ----------
     public void clearCache() {
+        clearCache(Minecraft.getInstance().getTextureManager());
+    }
+
+    public void clearCache(TextureManager textureManager) {
         LOGGER.debug("Clearing cache: id={}, path={}", id, path);
         if (staticLoader != null) {
-            staticLoader.clearCache();
+            staticLoader.clearCache(textureManager);
             staticLoader = null;
         }
         if (gifLoader != null) {
-            gifLoader.clearCache();
+            gifLoader.clearCache(textureManager);
             gifLoader = null;
         }
-        thumbnailTexture = null;
+        if (thumbnailTexture != null) {
+            textureManager.release(thumbnailTexture);
+            thumbnailTexture = null;
+        }
         thumbnailFailed = false;
         loadingThumbnail = false;
     }
 
     // ---------- 主纹理获取 ----------
     @Nullable
-    public synchronized Identifier getCurrentFrame(TextureManager textureManager, float partialTick) {
+    public Identifier getCurrentFrame(TextureManager textureManager, float partialTick) {
         Path absPath = getAbsolutePath();
         if (absPath == null) {
             LOGGER.warn("Cannot get absolute path: id={}, path={}", id, path);
@@ -294,6 +322,9 @@ public class ImageEntry {
     }
 
     private boolean isGifFile() {
-        return path != null && path.toLowerCase().endsWith(".gif");
+        if (gifFileCache == null) {
+            gifFileCache = path != null && path.toLowerCase().endsWith(".gif");
+        }
+        return gifFileCache;
     }
 }

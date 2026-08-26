@@ -5,12 +5,12 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public class Config {
 
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
+    static final ModConfigSpec SPEC = BUILDER.build();
     private static final ModConfigSpec.IntValue titleScreenBtnXOffset = BUILDER.defineInRange("titleScreenBtnXOffset", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
     private static final ModConfigSpec.IntValue titleScreenBtnYOffset = BUILDER.defineInRange("titleScreenBtnYOffset", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
     private static final ModConfigSpec.IntValue optionsScreenBtnXOffset = BUILDER.defineInRange("optionsScreenBtnXOffset", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
     private static final ModConfigSpec.IntValue optionsScreenBtnYOffset = BUILDER.defineInRange("optionsScreenBtnYOffset", 0, Integer.MIN_VALUE, Integer.MAX_VALUE);
     private static boolean isOpenContainerScreen;
-    static final ModConfigSpec SPEC = BUILDER.build();
 
     public static boolean isIsOpenContainerScreen() {
         return isOpenContainerScreen;

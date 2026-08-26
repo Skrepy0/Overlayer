@@ -6,6 +6,9 @@ import java.util.List;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
+import com.skrepy.overlayer.data.ImageEntry;
+import com.skrepy.overlayer.data.loader.GifLoader;
+import com.skrepy.overlayer.data.loader.StaticImageLoader;
 import com.skrepy.overlayer.manager.OverlayerManager;
 
 import net.neoforged.bus.api.IEventBus;
@@ -29,6 +32,15 @@ public class Overlayer {
         GAME_DIR = FMLPaths.GAMEDIR.get();
         LOGGER.info("GAME_DIR:{}", GAME_DIR);
         OverlayerManager.getInstance().load();
+        registerShutdownHook();
+    }
+
+    private void registerShutdownHook() {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            StaticImageLoader.shutdownExecutor();
+            GifLoader.shutdownExecutor();
+            ImageEntry.shutdownExecutor();
+        }, "Overlayer-Shutdown"));
     }
 
     @SubscribeEvent

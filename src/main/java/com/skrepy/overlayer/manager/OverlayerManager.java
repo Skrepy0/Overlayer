@@ -14,6 +14,7 @@ import com.skrepy.overlayer.Overlayer;
 import com.skrepy.overlayer.data.ImageEntry;
 import com.skrepy.overlayer.data.OverlayerData;
 import com.skrepy.overlayer.data.OverlayerDataManager;
+import com.skrepy.overlayer.render.OverlayRenderer;
 
 import net.minecraft.network.chat.Component;
 
@@ -80,15 +81,18 @@ public class OverlayerManager {
 
     public void addInstance(ImageEntry entry) {
         instances.add(entry);
+        OverlayRenderer.invalidateSortCache();
         save();
     }
 
     public void removeInstance(ImageEntry entry) {
         instances.remove(entry);
+        OverlayRenderer.invalidateSortCache();
         save();
     }
 
     public void updateInstance(ImageEntry entry) {
+        OverlayRenderer.invalidateSortCache();
         save();
     }
 }

@@ -35,28 +35,23 @@ public class GifLoader {
         t.setDaemon(true);
         return t;
     });
-
+    // 共享占位纹理（由主线程创建）
+    private static Identifier placeholderTexture = null;
     private final String path;
     private final Path absolutePath;
     private final int id;
-
     // 加载完成后只读数据（由主线程访问）
     private volatile List<Identifier> gifTextures;
     private volatile List<Integer> gifDelays;
     private volatile int gifTotalDelay = 0;
     private volatile int originalWidth;
     private volatile int originalHeight;
-
     // 状态
     private volatile boolean gifLoaded = false;
     private volatile boolean gifLoading = false;
-
     // 播放辅助
     private long gifStartTime = 0;
-    private int lastFrameIndex = -1;
-
-    // 共享占位纹理（由主线程创建）
-    private static Identifier placeholderTexture = null;
+    private int[] cumulativeDelays;
 
     public GifLoader(int id, String path, Path absolutePath) {
         this.id = id;
@@ -64,10 +59,27 @@ public class GifLoader {
         this.absolutePath = absolutePath;
     }
 
+    public static void shutdownExecutor() {
+        DECODER_EXECUTOR.shutdownNow();
+    }
+
+    private static synchronized Identifier createPlaceholderTexture(TextureManager textureManager) {
+        if (placeholderTexture != null) return placeholderTexture;
+        NativeImage placeholder = new NativeImage(NativeImage.Format.RGBA, 1, 1, false);
+        placeholder.setPixelABGR(0, 0, 0x00000000);
+        DynamicTexture dynTex = new DynamicTexture(() -> "overlayer_placeholder", placeholder);
+        Identifier loc = Identifier.tryBuild("overlayer", "placeholder/" + UUID.randomUUID());
+        if (loc == null) loc = Identifier.withDefaultNamespace("placeholder/" + UUID.randomUUID());
+        textureManager.register(loc, dynTex);
+        placeholderTexture = loc;
+        LOGGER.debug("Placeholder texture created: {}", loc);
+        return loc;
+    }
+
     /**
      * 异步加载 GIF，解码在后台线程，纹理注册在主线程
      */
-    public synchronized void loadAsync(TextureManager textureManager) {
+    public void loadAsync(TextureManager textureManager) {
         if (gifLoading || gifLoaded) return;
         if (absolutePath == null) {
             LOGGER.error("absolutePath is null, cannot load: id={}", id);
@@ -119,12 +131,38 @@ public class GifLoader {
             gifLoaded = true;
             gifLoading = false;
             gifStartTime = System.currentTimeMillis();
+            buildCumulativeDelays();
             LOGGER.info("GIF loaded async: id={}, frames={}, totalDelay={}ms", id, textures.size(), totalDelay);
         }, Minecraft.getInstance()).exceptionally(e -> {
             LOGGER.error("Async GIF load failed: id={}", id, e);
             gifLoading = false;
             return null;
         });
+    }
+
+    private void buildCumulativeDelays() {
+        if (gifDelays == null) return;
+        cumulativeDelays = new int[gifDelays.size()];
+        int sum = 0;
+        for (int i = 0; i < gifDelays.size(); i++) {
+            sum += gifDelays.get(i);
+            cumulativeDelays[i] = sum;
+        }
+        gifDelays = null; // Free memory, no longer needed after building cumulative array
+    }
+
+    private int binarySearchFrame(int cycleTime) {
+        int low = 0;
+        int high = cumulativeDelays.length - 1;
+        while (low < high) {
+            int mid = (low + high) >>> 1;
+            if (cumulativeDelays[mid] <= cycleTime) {
+                low = mid + 1;
+            } else {
+                high = mid;
+            }
+        }
+        return low;
     }
 
     /**
@@ -203,7 +241,7 @@ public class GifLoader {
     }
 
     @Nullable
-    public synchronized Identifier getCurrentFrame() {
+    public Identifier getCurrentFrame() {
         if (!gifLoaded) return null;
         if (gifTextures == null || gifTextures.isEmpty()) return null;
         if (gifTotalDelay == 0) return gifTextures.getFirst();
@@ -211,40 +249,25 @@ public class GifLoader {
         long currentTime = System.currentTimeMillis();
         long elapsed = currentTime - gifStartTime;
         int cycleTime = (int) (elapsed % gifTotalDelay);
-        int accum = 0;
-        int selectedIndex = 0;
-        for (int i = 0; i < gifDelays.size(); i++) {
-            accum += gifDelays.get(i);
-            if (cycleTime < accum) {
-                selectedIndex = i;
-                break;
-            }
-        }
-        lastFrameIndex = selectedIndex;
+        int selectedIndex = binarySearchFrame(cycleTime);
         return gifTextures.get(selectedIndex);
     }
 
-    private static synchronized Identifier createPlaceholderTexture(TextureManager textureManager) {
-        if (placeholderTexture != null) return placeholderTexture;
-        NativeImage placeholder = new NativeImage(NativeImage.Format.RGBA, 1, 1, false);
-        placeholder.setPixelABGR(0, 0, 0x00000000);
-        DynamicTexture dynTex = new DynamicTexture(() -> "overlayer_placeholder", placeholder);
-        Identifier loc = Identifier.tryBuild("overlayer", "placeholder/" + UUID.randomUUID());
-        if (loc == null) loc = Identifier.withDefaultNamespace("placeholder/" + UUID.randomUUID());
-        textureManager.register(loc, dynTex);
-        placeholderTexture = loc;
-        LOGGER.debug("Placeholder texture created: {}", loc);
-        return loc;
-    }
-
-    public void clearCache() {
+    public void clearCache(TextureManager textureManager) {
         LOGGER.debug("Clearing GIF cache: id={}", id);
-        gifTextures = null;
+        if (gifTextures != null) {
+            for (Identifier loc : gifTextures) {
+                if (loc != null) {
+                    textureManager.release(loc);
+                }
+            }
+            gifTextures = null;
+        }
         gifDelays = null;
+        cumulativeDelays = null;
         gifLoaded = false;
         gifLoading = false;
         gifStartTime = 0;
-        lastFrameIndex = -1;
     }
 
     public boolean isLoaded() {
@@ -263,13 +286,9 @@ public class GifLoader {
         return originalHeight;
     }
 
-    public void resetStartTime() {
-        this.gifStartTime = System.currentTimeMillis();
-    }
-
     private static class FrameData {
-        List<BufferedImage> frames = new ArrayList<>();
-        List<Integer> delays = new ArrayList<>();
+        final List<BufferedImage> frames = new ArrayList<>();
+        final List<Integer> delays = new ArrayList<>();
         int width, height;
     }
 }

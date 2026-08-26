@@ -26,6 +26,10 @@ public class ScrollablePanel extends AbstractWidget implements ContainerEventHan
     @Nullable
     private GuiEventListener focusedChild = null;
     private boolean dragging = false;
+    private boolean positionsDirty = true;
+    private int lastScrollOffset = Integer.MIN_VALUE;
+    private int lastX = Integer.MIN_VALUE;
+    private int lastY = Integer.MIN_VALUE;
 
     public ScrollablePanel(int x, int y, int width, int height, int contentHeight) {
         super(x, y, width, height, Component.empty());
@@ -48,21 +52,32 @@ public class ScrollablePanel extends AbstractWidget implements ContainerEventHan
 
     @Override
     public void setX(int x) {
-        super.setX(x);
-        updateAllPositions();
+        if (x != this.getX()) {
+            super.setX(x);
+            positionsDirty = true;
+        }
     }
 
     @Override
     public void setY(int y) {
-        super.setY(y);
-        updateAllPositions();
+        if (y != this.getY()) {
+            super.setY(y);
+            positionsDirty = true;
+        }
     }
 
     @Override
     protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         graphics.enableScissor(getX(), getY(), getX() + getWidth(), getY() + getHeight());
 
-        updateAllPositions();
+        // Only update positions if something changed
+        if (positionsDirty || scrollOffset != lastScrollOffset || getX() != lastX || getY() != lastY) {
+            updateAllPositions();
+            lastScrollOffset = scrollOffset;
+            lastX = getX();
+            lastY = getY();
+            positionsDirty = false;
+        }
 
         for (ChildEntry entry : children) {
             if (entry.widget instanceof AbstractWidget aw) {
@@ -129,9 +144,9 @@ public class ScrollablePanel extends AbstractWidget implements ContainerEventHan
             return focusedChild.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         }
         int maxScroll = Math.max(0, contentHeight - getHeight());
-        if (maxScroll <= 0) return false;
+        if (maxScroll == 0) return false;
         scrollOffset = (int) Math.max(0, Math.min(maxScroll, scrollOffset - scrollY * 15));
-        updateAllPositions();
+        positionsDirty = true;
         return true;
     }
 
