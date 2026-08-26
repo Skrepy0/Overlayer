@@ -182,6 +182,7 @@ spotless {
         target 'src/**/*.java'
         eclipse().configFile('code-style.xml')
         importOrder('java', 'javax', 'org', 'com')
+        targetExclude 'src/main/java/com/skrepy/overlayer/Config.java'
         trimTrailingWhitespace()
         endWithNewline()
     }
