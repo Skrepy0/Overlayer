@@ -5,7 +5,7 @@ import com.skrepy.overlayer.datagen.ModENUSLangProvider;
 import net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
 
-public class OverlayDataGenerator implements DataGeneratorEntrypoint {
+public class OverlayerDataGenerator implements DataGeneratorEntrypoint {
 
     @Override
     public void onInitializeDataGenerator(FabricDataGenerator fabricDataGenerator) {
