@@ -6,6 +6,9 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.skrepy.overlayer.data.ImageEntry;
+import com.skrepy.overlayer.data.loader.GifLoader;
+import com.skrepy.overlayer.data.loader.StaticImageLoader;
 import com.skrepy.overlayer.manager.OverlayerManager;
 
 import net.fabricmc.api.ModInitializer;
@@ -27,5 +30,14 @@ public class Overlayer implements ModInitializer {
         GAME_DIR = FabricLoader.getInstance().getGameDir();
         LOGGER.info("GAME_DIR:{}", GAME_DIR);
         OverlayerManager.getInstance().load();
+        registerShutdownHook();
+    }
+
+    private void registerShutdownHook() {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            StaticImageLoader.shutdownExecutor();
+            GifLoader.shutdownExecutor();
+            ImageEntry.shutdownExecutor();
+        }, "Overlayer-Shutdown"));
     }
 }
