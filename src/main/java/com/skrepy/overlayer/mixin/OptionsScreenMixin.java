@@ -1,5 +1,8 @@
 package com.skrepy.overlayer.mixin;
 
+import java.lang.reflect.Field;
+import java.util.List;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -7,68 +10,47 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.skrepy.overlayer.Config;
-import com.skrepy.overlayer.client.gui.ConfigScreen;
 import com.skrepy.overlayer.client.gui.OverlayerSettingsScreen;
+import com.skrepy.overlayer.mixin.accessor.ScreenAccessor;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.option.OptionsScreen;
-import net.minecraft.client.gui.tooltip.Tooltip;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableTextContent;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.options.OptionsScreen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.contents.TranslatableContents;
 
-@Environment(EnvType.CLIENT)
 @Mixin(OptionsScreen.class)
-public abstract class OptionsScreenMixin extends Screen {
-    @Unique
-    private ButtonWidget overlayer$customButton;
+public abstract class OptionsScreenMixin {
 
-    protected OptionsScreenMixin(Text title) {
-        super(title);
-    }
+    @Unique
+    private Button overlayer$customButton;
 
     @Inject(method = "init", at = @At("RETURN"))
     private void onInit(CallbackInfo ci) {
         OptionsScreen screen = (OptionsScreen) (Object) this;
 
-        ButtonWidget videoButton = overlayer$findVideoSettingsButton(screen);
-        if (videoButton == null) {
-            return;
-        }
+        overlayer$customButton = Button.builder(
+                Component.literal("O"), btn -> Minecraft.getInstance().setScreenAndShow(new OverlayerSettingsScreen(screen))
+        ).pos(0, 0).size(20, 20).tooltip(Tooltip.create(Component.translatable("overlayer.screen.button.config.tooltip"))).build();
 
-        overlayer$customButton = ButtonWidget.builder(
-                Text.literal("O"), (btn) -> {
-                    if (Screen.hasShiftDown()) {
-                        MinecraftClient.getInstance().setScreen(new ConfigScreen());
-                    } else {
-                        MinecraftClient.getInstance().setScreen(new OverlayerSettingsScreen(screen));
-                    }
-                }
-        ).position(0, 0).size(20, 20).tooltip(Tooltip.of(Text.translatable("overlayer.screen.button.config.tooltip"))).build();
-
-        this.addDrawableChild(overlayer$customButton);
+        ((ScreenAccessor) screen).invokeAddRenderableWidget(overlayer$customButton);
         overlayer$updateCustomButtonPosition(screen);
     }
 
-    @Unique
-    private ButtonWidget overlayer$findVideoSettingsButton(OptionsScreen screen) {
-        return screen.children().stream().filter(ButtonWidget.class::isInstance).map(ButtonWidget.class::cast).filter(btn -> {
-            Text message = btn.getMessage();
-            if (message.getContent() instanceof TranslatableTextContent translatable) {
-                return "options.video".equals(translatable.getKey());
-            }
-            return false;
-        }).findFirst().orElse(null);
+    @Inject(method = "repositionElements", at = @At("TAIL"))
+    private void onRepositionElements(CallbackInfo ci) {
+        OptionsScreen screen = (OptionsScreen) (Object) this;
+        overlayer$updateCustomButtonPosition(screen);
     }
 
     @Unique
     private void overlayer$updateCustomButtonPosition(OptionsScreen screen) {
         if (overlayer$customButton == null) return;
 
-        ButtonWidget videoButton = overlayer$findVideoSettingsButton(screen);
+        Button videoButton = overlayer$findVideoSettingsButton(screen);
         if (videoButton == null) return;
 
         int newX = videoButton.getX() - 20 - 4 + Config.getOptionsScreenBtnXOffset();
@@ -78,9 +60,27 @@ public abstract class OptionsScreenMixin extends Screen {
         overlayer$customButton.setY(newY);
     }
 
-    @Inject(method = "refreshWidgetPositions", at = @At("TAIL"))
-    private void onRepositionElements(CallbackInfo ci) {
-        OptionsScreen screen = (OptionsScreen) (Object) this;
-        overlayer$updateCustomButtonPosition(screen);
+    @Unique
+    private Button overlayer$findVideoSettingsButton(Screen screen) {
+        try {
+            Field childrenField = Screen.class.getDeclaredField("children");
+            childrenField.setAccessible(true);
+            List<?> children = (List<?>) childrenField.get(screen);
+
+            for (Object child : children) {
+                if (child instanceof Button button) {
+                    Component message = button.getMessage();
+                    if (message instanceof MutableComponent mutable) {
+                        Object contents = mutable.getContents();
+                        if (contents instanceof TranslatableContents translatable && "options.video".equals(translatable.getKey())) {
+                            return button;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

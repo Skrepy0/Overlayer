@@ -5,29 +5,29 @@ import static com.skrepy.overlayer.manager.OverlayerManager.*;
 
 import java.util.List;
 
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.system.MemoryStack;
 
+import com.skrepy.overlayer.Overlayer;
 import com.skrepy.overlayer.client.gui.components.ImageList;
 import com.skrepy.overlayer.data.ImageEntry;
 import com.skrepy.overlayer.manager.OverlayerManager;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.minecraft.client.gui.screen.ConfirmScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.tooltip.Tooltip;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.client.gui.widget.TextWidget;
-import net.minecraft.screen.ScreenTexts;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.StringWidget;
+import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.screens.ConfirmScreen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
 
-@Environment(EnvType.CLIENT)
 public class OverlayerSettingsScreen extends Screen {
-    private static final Text TITLE = Text.translatable("overlayer.screen.settings_page.title");
-    private static final Text DONE = ScreenTexts.DONE;
-    private static final Text ADD = Text.translatable("overlayer.screen.settings_page.button.add");
-    private static final Text CLEAR = Text.translatable("overlayer.screen.settings_page.button.clear");
+    private static final Component TITLE = Component.translatable("overlayer.screen.settings_page.title");
+    private static final Component DONE = CommonComponents.GUI_DONE;
+    private static final Component ADD = Component.translatable("overlayer.screen.settings_page.button.add");
+    private static final Component CLEAR = Component.translatable("overlayer.screen.settings_page.button.clear");
     private static final int LIST_ENTRY_HEIGHT = 40;
     private static final int BUTTON_WIDTH = 100;
     private static final int BUTTON_HEIGHT = 20;
@@ -36,13 +36,13 @@ public class OverlayerSettingsScreen extends Screen {
     private final OverlayerManager manager;
     private final List<ImageEntry> imageEntries;
 
-    private TextFieldWidget pathInput;
-    private ButtonWidget browseButton;
-    private ButtonWidget doneButton;
-    private ButtonWidget addButton;
-    private ButtonWidget clearButton;
+    private EditBox pathInput;
+    private Button browseButton;
+    private Button doneButton;
+    private Button addButton;
+    private Button clearButton;
     private ImageList list;
-    private TextWidget titleWidget;
+    private StringWidget titleWidget;
 
     private int titleY = 20;
     private int inputY = 50;
@@ -59,54 +59,61 @@ public class OverlayerSettingsScreen extends Screen {
         super.init();
 
         titleY = 20;
-        // 使用 TextWidget，并修正 getWidth
-        this.titleWidget = new TextWidget(TITLE, this.textRenderer);
-        this.titleWidget.setX(this.width / 2 - this.textRenderer.getWidth(TITLE) / 2);
+        this.titleWidget = new StringWidget(TITLE, this.font);
+        this.titleWidget.setX(this.width / 2 - this.font.width(TITLE) / 2);
         this.titleWidget.setY(titleY);
-        this.addDrawableChild(this.titleWidget);
+        this.addRenderableWidget(this.titleWidget);
 
         inputY = titleY + 30;
-        this.pathInput = new TextFieldWidget(this.textRenderer, this.width / 2 - 110, inputY, 200, 20, Text.literal("输入图片路径"));
+        this.pathInput = new EditBox(this.font, this.width / 2 - 110, inputY, 200, 20, Component.literal("Image path"));
         this.pathInput.setMaxLength(Integer.MAX_VALUE);
-        this.addDrawableChild(this.pathInput);
+        this.addRenderableWidget(this.pathInput);
 
-        this.browseButton = ButtonWidget.builder(
-                Text.literal("..."), (btn) -> this.openFileChooser()
-        ).position(this.width / 2 + 95, inputY).size(20, 20).tooltip(Tooltip.of(Text.translatable("overlayer.screen.button.select_file.tooltip"))).build();
-        this.addDrawableChild(this.browseButton);
+        this.browseButton = Button.builder(Component.literal("..."), (_) -> this.openFileChooser()).pos(this.width / 2 + 95, inputY).size(20, 20).tooltip(Tooltip.create(Component.translatable("overlayer.screen.button.select_file.tooltip"))).build();
+        this.addRenderableWidget(this.browseButton);
 
         int buttonRowY = this.height - 30;
         int totalWidth = BUTTON_WIDTH * 3 + 8;
         int startX = this.width / 2 - totalWidth / 2;
 
-        this.doneButton = ButtonWidget.builder(DONE, (btn) -> this.close()).position(startX, buttonRowY).size(BUTTON_WIDTH, BUTTON_HEIGHT).build();
-        this.addDrawableChild(this.doneButton);
+        this.doneButton = Button.builder(DONE, (_) -> this.onClose()).pos(startX, buttonRowY).size(BUTTON_WIDTH, BUTTON_HEIGHT).build();
+        this.addRenderableWidget(this.doneButton);
 
-        this.addButton = ButtonWidget.builder(ADD, (btn) -> this.addCurrentPath()).position(startX + BUTTON_WIDTH + 4, buttonRowY).size(BUTTON_WIDTH, BUTTON_HEIGHT).build();
-        this.addDrawableChild(this.addButton);
+        this.addButton = Button.builder(ADD, (_) -> this.addCurrentPath()).pos(startX + BUTTON_WIDTH + 4, buttonRowY).size(BUTTON_WIDTH, BUTTON_HEIGHT).build();
+        this.addRenderableWidget(this.addButton);
 
-        this.clearButton = ButtonWidget.builder(CLEAR, (btn) -> this.clearList()).position(startX + (BUTTON_WIDTH + 4) * 2, buttonRowY).size(BUTTON_WIDTH, BUTTON_HEIGHT).build();
-        this.addDrawableChild(this.clearButton);
+        this.clearButton = Button.builder(CLEAR, (_) -> this.clearList()).pos(startX + (BUTTON_WIDTH + 4) * 2, buttonRowY).size(BUTTON_WIDTH, BUTTON_HEIGHT).build();
+        this.addRenderableWidget(this.clearButton);
 
-        // 创建 ImageList
-        this.list = new ImageList(this.client, 0, 0, 0, LIST_ENTRY_HEIGHT, this.textRenderer, this::removeEntry, this::openEditScreen);
+        this.list = new ImageList(this.minecraft, 0, 0, 0, LIST_ENTRY_HEIGHT, this.font, this::removeEntry, this::openEditScreen);
         this.list.updateEntries(this.imageEntries);
-        this.addDrawableChild(this.list);
+        this.addRenderableWidget(this.list);
 
-        this.updateLayout();
+        this.repositionElements();
     }
 
-    private void openEditScreen(ImageEntry entry) {
-        if (this.client != null) {
-            this.client.setScreen(new ImageEditScreen(this, entry, (edited) -> {
-                this.list.updateEntries(this.imageEntries);
-                manager.save();
-            }));
+    @Override
+    public void extractRenderState(@NotNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
+
+        if (list != null && list.isEmpty()) {
+            Component emptyText = Component.literal("请添加图片实例");
+            int x = list.getX() + list.getWidth() / 2 - font.width(emptyText) / 2;
+            int y = list.getY() + list.getHeight() / 2 - 5;
+            guiGraphics.text(font, emptyText, x, y, 0x888888, true);
         }
     }
 
-    private void updateLayout() {
-        this.titleWidget.setX(this.width / 2 - this.textRenderer.getWidth(TITLE) / 2);
+    private void openEditScreen(ImageEntry entry) {
+        this.minecraft.setScreenAndShow(new ImageEditScreen(this, entry, (_) -> {
+            this.list.updateEntries(this.imageEntries);
+            manager.save();
+        }));
+    }
+
+    @Override
+    protected void repositionElements() {
+        this.titleWidget.setX(this.width / 2 - this.font.width(TITLE) / 2);
         this.titleWidget.setY(titleY);
 
         int inputY = titleY + 30;
@@ -132,19 +139,21 @@ public class OverlayerSettingsScreen extends Screen {
         int listHeight = listBottom - listTop;
         if (listHeight < 0) listHeight = 0;
 
-        this.list.setDimensions(listWidth, listHeight);
-        this.list.setPosition(10, listTop);
+        this.list.setSize(listWidth, listHeight);
+        this.list.setY(listTop);
+        this.list.setX(10);
+        this.list.refresh();
+
+        Overlayer.LOGGER.debug("List reposition: size={}x{}, y={}, x={}", listWidth, listHeight, listTop, 10);
     }
 
     @Override
-    public void close() {
-        if (this.client != null) {
-            this.client.setScreen(this.lastScreen);
-        }
+    public void onClose() {
+        this.minecraft.setScreenAndShow(this.lastScreen);
     }
 
     @Override
-    public boolean shouldPause() {
+    public boolean isPauseScreen() {
         return true;
     }
 
@@ -152,38 +161,38 @@ public class OverlayerSettingsScreen extends Screen {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             String result = selectFile(stack);
             if (result != null) {
-                this.pathInput.setText(result);
+                this.pathInput.setValue(result);
             }
         }
     }
 
     private void addCurrentPath() {
-        String path = this.pathInput.getText().trim();
+        String path = this.pathInput.getValue().trim();
         if (path.startsWith("\"") && path.endsWith("\"")) {
             path = path.substring(1, path.length() - 1);
         }
         if (path.isEmpty()) {
             OverlayerToast.showWarning(
-                    Text.translatable("overlayer.toast.warning.invalid_path.title"), Text.translatable("overlayer.toast.warning.invalid_path.meg.empty_path")
+                    Component.translatable("overlayer.toast.warning.invalid_path.title"), Component.translatable("overlayer.toast.warning.invalid_path.meg.empty_path")
             );
             return;
         }
         String extension = getFileExtension(path);
         if (extension.isEmpty()) {
             OverlayerToast.showWarning(
-                    Text.translatable("overlayer.toast.warning.invalid_path.title"), Text.translatable("overlayer.toast.warning.invalid_path.meg.no_extension")
+                    Component.translatable("overlayer.toast.warning.invalid_path.title"), Component.translatable("overlayer.toast.warning.invalid_path.meg.no_extension", extension)
             );
             return;
         }
         if (!validFormat.contains(extension)) {
             OverlayerToast.showWarning(
-                    Text.translatable("overlayer.toast.warning.unsupported_format.title"), Text.translatable("overlayer.toast.warning.unsupported_format.meg", extension)
+                    Component.translatable("overlayer.toast.warning.unsupported_format.title"), Component.translatable("overlayer.toast.warning.unsupported_format.meg", extension)
             );
             return;
         }
         if (!fileExists(path)) {
             OverlayerToast.showWarning(
-                    Text.translatable("overlayer.toast.warning.invalid_path.title"), Text.translatable("overlayer.toast.warning.invalid_path.meg.no_file")
+                    Component.translatable("overlayer.toast.warning.invalid_path.title"), Component.translatable("overlayer.toast.warning.invalid_path.meg.no_file", extension)
             );
             return;
         }
@@ -192,40 +201,36 @@ public class OverlayerSettingsScreen extends Screen {
         ImageEntry newEntry = new ImageEntry(newId, path);
         imageEntries.add(newEntry);
         this.list.updateEntries(imageEntries);
-        this.pathInput.setText("");
+        this.pathInput.setValue("");
         manager.save();
     }
 
     private void removeEntry(ImageEntry entry) {
-        if (this.client != null) {
-            this.client.setScreen(new ConfirmScreen(
-                    confirmed -> {
-                        if (confirmed) {
-                            imageEntries.remove(entry);
-                            this.list.updateEntries(imageEntries);
-                            manager.save();
-                        }
-                        this.client.setScreen(this);
-                    }, Text.translatable("overlayer.screen.delete_confirm.title"), Text.translatable("overlayer.screen.delete_confirm.meg"), Text.translatable("overlayer.screen.common.delete"), ScreenTexts.CANCEL
-            ));
-        }
+        this.minecraft.setScreenAndShow(new ConfirmScreen(
+                confirmed -> {
+                    if (confirmed) {
+                        imageEntries.remove(entry);
+                        this.list.updateEntries(imageEntries);
+                        manager.save();
+                    }
+                    this.minecraft.setScreenAndShow(this);
+                }, Component.translatable("overlayer.screen.delete_confirm.title"), Component.translatable("overlayer.screen.delete_confirm.meg"), Component.translatable("overlayer.screen.common.delete"), CommonComponents.GUI_CANCEL
+        ));
     }
 
     private void clearList() {
         if (imageEntries.isEmpty()) {
             return;
         }
-        if (this.client != null) {
-            this.client.setScreen(new ConfirmScreen(
-                    confirmed -> {
-                        if (confirmed) {
-                            imageEntries.clear();
-                            this.list.updateEntries(imageEntries);
-                            manager.save();
-                        }
-                        this.client.setScreen(this);
-                    }, Text.translatable("overlayer.screen.delete_all_confirm.title"), Text.translatable("overlayer.screen.delete_all_confirm.meg"), Text.translatable("overlayer.screen.common.delete_all"), ScreenTexts.CANCEL
-            ));
-        }
+        this.minecraft.setScreenAndShow(new ConfirmScreen(
+                confirmed -> {
+                    if (confirmed) {
+                        imageEntries.clear();
+                        this.list.updateEntries(imageEntries);
+                        manager.save();
+                    }
+                    this.minecraft.setScreenAndShow(this);
+                }, Component.translatable("overlayer.screen.delete_all_confirm.title"), Component.translatable("overlayer.screen.delete_all_confirm.meg"), Component.translatable("overlayer.screen.common.delete_all"), CommonComponents.GUI_CANCEL
+        ));
     }
 }

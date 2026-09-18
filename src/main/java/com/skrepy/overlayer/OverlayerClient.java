@@ -2,36 +2,44 @@ package com.skrepy.overlayer;
 
 import org.lwjgl.glfw.GLFW;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.skrepy.overlayer.render.OverlayRenderer;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.resources.Identifier;
+
 
 public class OverlayerClient implements ClientModInitializer {
-    public static final KeyBinding TOGGLE_OVERLAY = new KeyBinding(
-            "key.overlayer.toggle_show_status", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_F1, "category.overlayer.general"
+    private static final KeyMapping.Category CATEGORY = new KeyMapping.Category(Identifier.fromNamespaceAndPath("overlayer", "general"));
+
+    public static final KeyMapping TOGGLE_OVERLAY = new KeyMapping(
+            "key.overlayer.toggle_show_status", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F1, CATEGORY
     );
+
     public static boolean overlayVisible = true;
 
     @Override
     public void onInitializeClient() {
-        KeyBindingHelper.registerKeyBinding(TOGGLE_OVERLAY);
+        KeyMappingHelper.registerKeyMapping(TOGGLE_OVERLAY);
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (TOGGLE_OVERLAY.wasPressed()) {
+            while (TOGGLE_OVERLAY.consumeClick()) {
                 overlayVisible = !overlayVisible;
             }
         });
-        ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
-            ScreenEvents.afterRender(screen).register((screen1, drawContext, mouseX, mouseY, tickDelta) -> {
-                if (overlayVisible) {
-                    OverlayRenderer.renderOverlays(drawContext, tickDelta);
-                }
-            });
+
+        ScreenEvents.BEFORE_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
+            // 26.2 中 afterRender 已移除，改用 afterExtract 在最顶层渲染
+            ScreenEvents.afterExtract(screen).register(
+                    (screen1, graphics, mouseX, mouseY, tickProgress) -> {
+                        if (overlayVisible) {
+                            OverlayRenderer.renderOverlays(graphics, tickProgress);
+                        }
+                    });
         });
     }
 }

@@ -7,39 +7,48 @@ import org.jetbrains.annotations.NotNull;
 
 import com.skrepy.overlayer.data.ImageEntry;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
-import net.minecraft.client.gui.screen.narration.NarrationPart;
-import net.minecraft.client.gui.widget.EntryListWidget;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.ObjectSelectionList;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 
-@Environment(EnvType.CLIENT)
-public class ImageList extends EntryListWidget<ImageList.Entry> {
-    private static final Text EMPTY_TEXT = Text.literal("请添加图片实例");
+public class ImageList extends ObjectSelectionList<ImageList.@NotNull Entry> {
     private static final int DELETE_BUTTON_WIDTH = 20;
     private static final int DELETE_BUTTON_PADDING = 4;
 
-    private final TextRenderer textRenderer;
+    private final Font font;
     private final Consumer<ImageEntry> onRemove;
     private final Consumer<ImageEntry> onEdit;
+    private final int itemHeight;
 
-    public ImageList(MinecraftClient client, int width, int height, int top, int itemHeight, TextRenderer textRenderer, Consumer<ImageEntry> onRemove, Consumer<ImageEntry> onEdit) {
-        super(client, width, height, top, itemHeight);
-        this.textRenderer = textRenderer;
+    public ImageList(Minecraft minecraft, int width, int height, int top, int itemHeight, Font font, Consumer<ImageEntry> onRemove, Consumer<ImageEntry> onEdit) {
+        super(minecraft, width, height, top, itemHeight);
+        this.font = font;
         this.onRemove = onRemove;
         this.onEdit = onEdit;
+        this.itemHeight = itemHeight;
+    }
+
+    public boolean isEmpty() {
+        return getItemCount() == 0;
     }
 
     public void updateEntries(List<ImageEntry> entries) {
         this.clearEntries();
         for (int i = 0; i < entries.size(); i++) {
             this.addEntry(new Entry(entries.get(i), i + 1));
+        }
+        this.refresh();
+    }
+
+    public void refresh() {
+        this.setScrollAmount(0);
+        if (this.getItemCount() > 0) {
+            this.getRowTop(0);
         }
     }
 
@@ -49,86 +58,86 @@ public class ImageList extends EntryListWidget<ImageList.Entry> {
     }
 
     @Override
-    protected int getScrollbarX() {
+    protected int scrollBarX() {
         return this.getX() + this.width - 8;
     }
 
-    @Override
-    public void renderWidget(@NotNull DrawContext context, int mouseX, int mouseY, float delta) {
-        super.renderWidget(context, mouseX, mouseY, delta);
-        if (this.getEntryCount() == 0) {
-            context.drawCenteredTextWithShadow(
-                    textRenderer, EMPTY_TEXT, this.getX() + this.width / 2, this.getY() + this.height / 2 - 5, 0x888888
-            );
-        }
-    }
-
-    // ========== 实现抽象方法 ==========
-    @Override
-    public void appendClickableNarrations(NarrationMessageBuilder builder) {
-        // 添加列表本身的叙述
-        builder.put(NarrationPart.TITLE, Text.translatable("narrator.screen.list"));
-        // 如果有选中条目，可以添加其叙述
-        if (this.getSelectedOrNull() != null) {
-            builder.put(NarrationPart.HINT, Text.literal("选中条目: " + this.getSelectedOrNull().getNarration().getString()));
-        }
-    }
-
-    // ---------- 内部类 Entry ----------
-    public class Entry extends EntryListWidget.Entry<Entry> {
+    public class Entry extends ObjectSelectionList.Entry<@NotNull Entry> {
         private final ImageEntry imageEntry;
         private final int number;
-        private final Text numberText;
+        private final Component numberText;
 
         public Entry(ImageEntry entry, int number) {
             this.imageEntry = entry;
             this.number = number;
-            this.numberText = Text.literal(String.valueOf(number));
-        }
-
-        // 注意：此方法不是重写，是自定义方法，不要加 @Override
-        public @NotNull Text getNarration() {
-            return Text.literal("图片条目 " + number);
+            this.numberText = Component.literal(String.valueOf(number));
         }
 
         @Override
-        public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float delta) {
-            TextRenderer font = ImageList.this.textRenderer;
+        public @NotNull Component getNarration() {
+            return Component.literal("图片条目 " + number);
+        }
 
-            context.drawText(font, numberText, x + 4, y + (entryHeight - 8) / 2, 0xFFFFFF, false);
-
-            int thumbX = x + 30;
-            int thumbY = y + 2;
-            int thumbSize = entryHeight - 4;
-            Identifier tex = imageEntry.getThumbnail(MinecraftClient.getInstance().getTextureManager(), null);
-            if (tex != null) {
-                context.drawTexture(RenderLayer::getGuiTextured, tex, thumbX, thumbY, 0.0f, 0.0f, thumbSize, thumbSize, thumbSize, thumbSize);
-            } else {
-                context.fill(thumbX, thumbY, thumbX + thumbSize, thumbY + thumbSize, 0xFF888888);
-                context.drawText(font, "?", thumbX + thumbSize / 2 - 4, thumbY + thumbSize / 2 - 4, 0xFFFFFF, false);
+        @Override
+        public void extractContent(@NotNull GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, boolean isHovered, float partialTick) {
+            int idx = ImageList.this.children().indexOf(this);
+            if (idx < 0 || idx >= ImageList.this.getItemCount()) {
+                return;
             }
 
-            String pathStr = imageEntry.getAbsolutePath().toString();
-            int maxPathWidth = entryWidth - 30 - thumbSize - 10 - DELETE_BUTTON_WIDTH - DELETE_BUTTON_PADDING * 2 - 4;
-            String display = font.trimToWidth(pathStr, maxPathWidth);
-            context.drawText(font, display, x + 30 + thumbSize + 6, y + (entryHeight - 8) / 2, 0xAAAAAA, false);
+            int y = ImageList.this.getY() + 4 + idx * ImageList.this.itemHeight - (int) ImageList.this.scrollAmount();
+            int left = ImageList.this.getRowLeft();
+            int width = ImageList.this.getRowWidth();
+            int height = ImageList.this.itemHeight;
 
-            int deleteX = x + entryWidth - DELETE_BUTTON_WIDTH - DELETE_BUTTON_PADDING;
-            int deleteY = y + (entryHeight - 16) / 2;
+            // ---- 编号 ----
+            guiGraphics.text(font, numberText, left + 4, y + (height - 8) / 2, 0xFFFFFFFF, true);
+
+            // ---- 缩略图 ----
+            int thumbX = left + 30;
+            int thumbY = y + 2;
+            int thumbSize = height - 4;
+
+            Identifier tex = imageEntry.getThumbnail(Minecraft.getInstance().getTextureManager(), null);
+            if (tex != null) {
+                guiGraphics.blit(
+                        RenderPipelines.GUI_TEXTURED, tex, thumbX, thumbY, 0.0f, 0.0f, thumbSize, thumbSize, thumbSize, thumbSize, thumbSize, thumbSize, -1
+                );
+            } else {
+                guiGraphics.fill(thumbX, thumbY, thumbX + thumbSize, thumbY + thumbSize, 0xFF888888);
+                guiGraphics.text(font, Component.literal("?"), thumbX + thumbSize / 2 - 4, thumbY + thumbSize / 2 - 4, 0xFFFFFFFF, true);
+            }
+
+            // ---- 路径 ----
+            String pathStr = imageEntry.getAbsolutePath().toString();
+            int maxPathWidth = width - 30 - thumbSize - 10 - DELETE_BUTTON_WIDTH - DELETE_BUTTON_PADDING * 2 - 4;
+            if (maxPathWidth < 20) maxPathWidth = 20;
+            String display = font.plainSubstrByWidth(pathStr, maxPathWidth);
+            if (font.width(display) < font.width(pathStr) && maxPathWidth > 20) {
+                display = display + "...";
+            }
+            guiGraphics.text(font, display, left + 30 + thumbSize + 6, y + (height - 8) / 2, 0xFFAAAAAA, true);
+
+            // ---- 删除按钮 ----
+            int deleteX = left + width - DELETE_BUTTON_WIDTH - DELETE_BUTTON_PADDING;
+            int deleteY = y + (height - 16) / 2;
             int deleteW = DELETE_BUTTON_WIDTH;
             int deleteH = 16;
-            boolean hoveredDelete = mouseX >= deleteX && mouseX <= deleteX + deleteW && mouseY >= deleteY && mouseY <= deleteY + deleteH;
-            int deleteBg = hoveredDelete ? 0xCCFF4444 : 0x44FFFFFF;
-            context.fill(deleteX, deleteY, deleteX + deleteW, deleteY + deleteH, deleteBg);
-            context.drawText(font, "×", deleteX + (deleteW - font.getWidth("×")) / 2, deleteY + (deleteH - 8) / 2, 0xFF6666, false);
+            boolean hovered = mouseX >= deleteX && mouseX <= deleteX + deleteW && mouseY >= deleteY && mouseY <= deleteY + deleteH;
+            guiGraphics.fill(deleteX, deleteY, deleteX + deleteW, deleteY + deleteH, hovered ? 0xCC555555 : 0x44FFFFFF);
+            guiGraphics.text(font, "×", deleteX + (deleteW - font.width("×")) / 2, deleteY + (deleteH - 8) / 2, 0xFFFF6666, true);
         }
 
         @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+            double mouseX = event.x();
+            double mouseY = event.y();
+
             int rowLeft = ImageList.this.getRowLeft();
             int rowWidth = ImageList.this.getRowWidth();
             int deleteX = rowLeft + rowWidth - DELETE_BUTTON_WIDTH - DELETE_BUTTON_PADDING;
-            int rowTop = ImageList.this.getRowTop(ImageList.this.children().indexOf(this));
+            int idx = ImageList.this.children().indexOf(this);
+            int rowTop = ImageList.this.getY() + 4 + idx * ImageList.this.itemHeight - (int) ImageList.this.scrollAmount();
             int deleteY = rowTop + (ImageList.this.itemHeight - 16) / 2;
 
             if (mouseX >= deleteX && mouseX <= deleteX + DELETE_BUTTON_WIDTH && mouseY >= deleteY && mouseY <= deleteY + 16) {

@@ -2,17 +2,19 @@ package com.skrepy.overlayer.datagen;
 
 import java.util.concurrent.CompletableFuture;
 
-import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
+import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricLanguageProvider;
-import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.core.HolderLookup;
+
 
 public class ModZHCNLangProvider extends FabricLanguageProvider {
-    public ModZHCNLangProvider(FabricDataOutput dataOutput, CompletableFuture<RegistryWrapper.WrapperLookup> registryLookup) {
-        super(dataOutput, "zh_cn", registryLookup);
+
+    protected ModZHCNLangProvider(FabricPackOutput packOutput, CompletableFuture<HolderLookup.Provider> registryLookup) {
+        super(packOutput, "zh_cn", registryLookup);
     }
 
     @Override
-    public void generateTranslations(RegistryWrapper.WrapperLookup registryLookup, TranslationBuilder translationBuilder) {
+    public void generateTranslations(HolderLookup.Provider provider, TranslationBuilder translationBuilder) {
         translationBuilder.add("category.overlayer.general", "Overlayer通用配置");
         translationBuilder.add("key.overlayer.toggle_show_status", "切换实例显示状态");
         translationBuilder.add("overlayer.configuration.title", "Overlayer");
@@ -62,4 +64,5 @@ public class ModZHCNLangProvider extends FabricLanguageProvider {
         translationBuilder.add("overlayer.screen.unsaved.title", "未保存");
         translationBuilder.add("overlayer.screen.unsaved.meg", "系统不会保存当前您作出的更改, 是否要退出?");
     }
+
 }

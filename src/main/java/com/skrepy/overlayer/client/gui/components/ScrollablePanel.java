@@ -3,29 +3,43 @@ package com.skrepy.overlayer.client.gui.components;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.Element;
-import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
-import net.minecraft.client.gui.widget.ClickableWidget;
-import net.minecraft.text.Text;
+import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.Nullable;
 
-public class ScrollablePanel extends ClickableWidget {
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Renderable;
+import net.minecraft.client.gui.components.events.ContainerEventHandler;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.narration.NarratedElementType;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.navigation.ScreenRectangle;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.network.chat.Component;
+
+public class ScrollablePanel extends AbstractWidget implements ContainerEventHandler {
     private final List<ChildEntry> children = new ArrayList<>();
     private final int contentHeight;
     private int scrollOffset = 0;
-    private Element focusedChild = null;
+    @Nullable
+    private GuiEventListener focusedChild = null;
     private boolean dragging = false;
+    private boolean positionsDirty = true;
+    private int lastScrollOffset = Integer.MIN_VALUE;
+    private int lastX = Integer.MIN_VALUE;
+    private int lastY = Integer.MIN_VALUE;
 
     public ScrollablePanel(int x, int y, int width, int height, int contentHeight) {
-        super(x, y, width, height, Text.empty());
+        super(x, y, width, height, Component.empty());
         this.contentHeight = contentHeight;
     }
 
-    public void addWidget(Element widget) {
-        if (widget instanceof ClickableWidget aw) {
-            int relX = aw.getX();
-            int relY = aw.getY();
-            children.add(new ChildEntry(widget, relX, relY));
+    public void addWidget(GuiEventListener widget) {
+        if (widget instanceof AbstractWidget aw) {
+            // 添加时，aw 的坐标是相对于面板内部的
+            children.add(new ChildEntry(widget, aw.getX(), aw.getY()));
             updateAllPositions();
         }
     }
@@ -38,130 +52,151 @@ public class ScrollablePanel extends ClickableWidget {
 
     @Override
     public void setX(int x) {
-        super.setX(x);
-        updateAllPositions();
+        if (x != this.getX()) {
+            super.setX(x);
+            positionsDirty = true;
+        }
     }
 
     @Override
     public void setY(int y) {
-        super.setY(y);
-        updateAllPositions();
+        if (y != this.getY()) {
+            super.setY(y);
+            positionsDirty = true;
+        }
     }
 
     @Override
-    protected void renderWidget(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
-        context.enableScissor(getX(), getY(), getX() + getWidth(), getY() + getHeight());
-        updateAllPositions();
+    protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        graphics.enableScissor(getX(), getY(), getX() + getWidth(), getY() + getHeight());
+
+        // Only update positions if something changed
+        if (positionsDirty || scrollOffset != lastScrollOffset || getX() != lastX || getY() != lastY) {
+            updateAllPositions();
+            lastScrollOffset = scrollOffset;
+            lastX = getX();
+            lastY = getY();
+            positionsDirty = false;
+        }
 
         for (ChildEntry entry : children) {
-            if (entry.widget instanceof ClickableWidget w) {
-                int top = w.getY();
-                int bottom = w.getY() + w.getHeight();
-                if (bottom > getY() && top < getY() + getHeight()) {
-                    w.render(context, mouseX, mouseY, deltaTicks);
+            if (entry.widget instanceof AbstractWidget aw) {
+                int top = aw.getY();
+                int bottom = aw.getY() + aw.getHeight();
+                if (top < getY() + getHeight() && bottom > getY()) {
+                    aw.extractRenderState(graphics, mouseX, mouseY, partialTick);
                 }
+            } else if (entry.widget instanceof Renderable renderable) {
+                renderable.extractRenderState(graphics, mouseX, mouseY, partialTick);
             }
         }
 
-        context.disableScissor();
+        graphics.disableScissor();
 
         if (contentHeight > getHeight()) {
             int barHeight = (int) ((float) getHeight() / contentHeight * getHeight());
             int barY = getY() + (int) ((float) scrollOffset / (contentHeight - getHeight()) * (getHeight() - barHeight));
-            context.fill(getX() + getWidth() - 6, barY, getX() + getWidth() - 2, barY + barHeight, 0xAAFFFFFF);
+            graphics.fill(getX() + getWidth() - 6, barY, getX() + getWidth() - 2, barY + barHeight, 0xAAFFFFFF);
         }
     }
 
-    // ---- 鼠标事件 ----
+    // ---- 鼠标事件（直接传递屏幕坐标） ----
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (!isMouseOver(mouseX, mouseY)) {
-
-            return false;
-        }
-
-        boolean anyChildHandled = false;
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (!isMouseOver(event.x(), event.y())) return false;
         for (ChildEntry entry : children) {
-            Element child = entry.widget;
-            boolean over = child.isMouseOver(mouseX, mouseY);
-            if (over) {
-                boolean handled = child.mouseClicked(mouseX, mouseY, button);
-                if (handled) {
-                    setFocusedChild(child);
-                    if (button == 0) dragging = true;
+            if (entry.widget.isMouseOver(event.x(), event.y())) {
+                if (entry.widget.mouseClicked(event, doubleClick)) {
+                    this.setFocused(entry.widget);
+                    if (event.button() == 0) {
+                        this.dragging = true;
+                    }
                     return true;
                 }
             }
         }
-
-        if (!anyChildHandled) {
-            setFocusedChild(null);
-        }
         return false;
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (button == 0 && dragging) {
-            dragging = false;
-            if (focusedChild != null) {
-                return focusedChild.mouseReleased(mouseX, mouseY, button);
+    public boolean mouseReleased(MouseButtonEvent event) {
+        if (event.button() == 0 && this.dragging) {
+            this.dragging = false;
+            if (this.focusedChild != null) {
+                return this.focusedChild.mouseReleased(event);
             }
         }
         return false;
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        if (dragging && focusedChild != null) {
-            return focusedChild.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+    public boolean mouseDragged(@NotNull MouseButtonEvent event, double dx, double dy) {
+        if (this.dragging && this.focusedChild != null) {
+            return this.focusedChild.mouseDragged(event, dx, dy);
         }
         return false;
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (!isMouseOver(mouseX, mouseY)) return false;
         if (focusedChild != null && focusedChild.isMouseOver(mouseX, mouseY)) {
-            return focusedChild.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+            return focusedChild.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         }
         int maxScroll = Math.max(0, contentHeight - getHeight());
         if (maxScroll == 0) return false;
-        scrollOffset = (int) Math.max(0, Math.min(maxScroll, scrollOffset - verticalAmount * 15));
-        updateAllPositions();
+        scrollOffset = (int) Math.max(0, Math.min(maxScroll, scrollOffset - scrollY * 15));
+        positionsDirty = true;
         return true;
     }
 
     // ---- 键盘事件 ----
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        return focusedChild != null && focusedChild.keyPressed(keyCode, scanCode, modifiers);
+    public boolean keyPressed(@NotNull KeyEvent event) {
+        return focusedChild != null && focusedChild.keyPressed(event);
     }
 
     @Override
-    public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        return focusedChild != null && focusedChild.keyReleased(keyCode, scanCode, modifiers);
+    public boolean keyReleased(@NotNull KeyEvent event) {
+        return focusedChild != null && focusedChild.keyReleased(event);
     }
 
     @Override
-    public boolean charTyped(char chr, int modifiers) {
-        return focusedChild != null && focusedChild.charTyped(chr, modifiers);
+    public boolean charTyped(@NotNull CharacterEvent event) {
+        return focusedChild != null && focusedChild.charTyped(event);
     }
 
-    // ---- 焦点管理 ----
-    public void setFocusedChild(Element child) {
-        if (focusedChild != null && focusedChild != child) {
-            focusedChild.setFocused(false);
+    // ----- 焦点管理 -----
+    @Override
+    public @NotNull List<? extends GuiEventListener> children() {
+        return children.stream().map(e -> e.widget).toList();
+    }
+
+    @Nullable
+    @Override
+    public GuiEventListener getFocused() {
+        return focusedChild;
+    }
+
+    @Override
+    public void setFocused(@Nullable GuiEventListener child) {
+        if (this.focusedChild != null && this.focusedChild != child) {
+            this.focusedChild.setFocused(false);
         }
-        focusedChild = child;
+        this.focusedChild = child;
         if (child != null) {
             child.setFocused(true);
         }
     }
 
     @Override
-    public void setFocused(boolean focused) {
-        super.setFocused(focused);
+    public boolean isDragging() {
+        return dragging;
+    }
+
+    @Override
+    public void setDragging(boolean dragging) {
+        this.dragging = dragging;
     }
 
     @Override
@@ -170,21 +205,21 @@ public class ScrollablePanel extends ClickableWidget {
     }
 
     @Override
-    public SelectionType getType() {
-        if (isFocused()) return SelectionType.FOCUSED;
-        if (isHovered()) return SelectionType.HOVERED;
-        return SelectionType.NONE;
+    public @NotNull ScreenRectangle getRectangle() {
+        return new ScreenRectangle(getX(), getY(), getWidth(), getHeight());
     }
 
     @Override
-    protected void appendClickableNarrations(NarrationMessageBuilder builder) {
+    protected void updateWidgetNarration(NarrationElementOutput output) {
+        output.add(NarratedElementType.TITLE, Component.literal("scrollable panel"));
     }
 
-    private record ChildEntry(Element widget, int relX, int relY) {
+    private record ChildEntry(GuiEventListener widget, int relX, int relY) {
+
         void updatePosition(int panelX, int panelY, int scrollOffset) {
-            if (widget instanceof ClickableWidget w) {
-                w.setX(panelX + relX);
-                w.setY(panelY + relY - scrollOffset);
+            if (widget instanceof AbstractWidget aw) {
+                aw.setX(panelX + relX);
+                aw.setY(panelY + relY - scrollOffset);
             }
         }
     }

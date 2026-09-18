@@ -10,17 +10,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.icafe4j.image.ImageIO;
+import com.mojang.blaze3d.platform.NativeImage;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.texture.NativeImage;
-import net.minecraft.client.texture.NativeImageBackedTexture;
-import net.minecraft.client.texture.TextureManager;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.resources.Identifier;
 
 /**
  * 异步加载静态图片，使用 icafe4j 解码。
@@ -51,14 +50,17 @@ public class StaticImageLoader {
         this.absolutePath = absolutePath;
     }
 
+    public static void shutdownExecutor() {
+        DECODER_EXECUTOR.shutdownNow();
+    }
+
     /**
      * 获取纹理标识符。
      * - 若已加载完成，返回纹理。
      * - 若正在加载或已失败，返回 null。
      * - 若未开始加载，则启动异步加载，返回 null。
      */
-    @Nullable
-    public synchronized Identifier getOrLoad(TextureManager textureManager) {
+    public Identifier getOrLoad(TextureManager textureManager) {
         if (loaded && texture != null) {
             return texture;
         }
@@ -73,7 +75,7 @@ public class StaticImageLoader {
     /**
      * 异步加载图片，纹理注册将在主线程完成。
      */
-    public synchronized void loadAsync(TextureManager textureManager) {
+    public void loadAsync(TextureManager textureManager) {
         if (loading || loaded) return;
         if (absolutePath == null) {
             LOGGER.error("absolutePath is null, cannot load: id={}", id);
@@ -92,16 +94,19 @@ public class StaticImageLoader {
             }
             // 主线程注册纹理
             NativeImage nativeImage = imageData.nativeImage;
-            NativeImageBackedTexture dynTex = new NativeImageBackedTexture(() -> "overlayer_texture", nativeImage);
-            Identifier location = Identifier.of("overlayer", "img/" + UUID.randomUUID());
-            textureManager.registerTexture(location, dynTex);
+            DynamicTexture dynTex = new DynamicTexture(() -> "overlayer_texture", nativeImage);
+            Identifier location = Identifier.tryBuild("overlayer", "img/" + UUID.randomUUID());
+            if (location == null) {
+                location = Identifier.withDefaultNamespace("img/" + UUID.randomUUID());
+            }
+            textureManager.register(location, dynTex);
             texture = location;
             width = imageData.width;
             height = imageData.height;
             loaded = true;
             loading = false;
             LOGGER.debug("Static image loaded: id={}, size={}x{}", id, width, height);
-        }, MinecraftClient.getInstance()).exceptionally(e -> {
+        }, Minecraft.getInstance()).exceptionally(e -> {
             LOGGER.error("Async static image load failed: id={}", id, e);
             loading = false;
             failed = true;
@@ -112,7 +117,6 @@ public class StaticImageLoader {
     /**
      * 后台解码，返回 NativeImage 和尺寸。
      */
-    @Nullable
     private ImageData decodeImage() {
         try {
             File file = absolutePath.toFile();
@@ -133,8 +137,11 @@ public class StaticImageLoader {
         }
     }
 
-    public void clearCache() {
-        texture = null;
+    public void clearCache(TextureManager textureManager) {
+        if (texture != null) {
+            textureManager.release(texture);
+            texture = null;
+        }
         width = 0;
         height = 0;
         loaded = false;

@@ -10,13 +10,13 @@ import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
-import com.skrepy.overlayer.Config;
 import com.skrepy.overlayer.Overlayer;
 import com.skrepy.overlayer.data.ImageEntry;
 import com.skrepy.overlayer.data.OverlayerData;
 import com.skrepy.overlayer.data.OverlayerDataManager;
+import com.skrepy.overlayer.render.OverlayRenderer;
 
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 public class OverlayerManager {
     private static final OverlayerManager INSTANCE = new OverlayerManager();
@@ -59,7 +59,7 @@ public class OverlayerManager {
         filterPatterns.flip();
 
         return TinyFileDialogs.tinyfd_openFileDialog(
-                Text.translatable("overlayer.screen.common.select_pic").getString(), null, filterPatterns, null, false
+                Component.translatable("overlayer.screen.common.select_pic").getString(), null, filterPatterns, null, false
         );
     }
 
@@ -71,33 +71,28 @@ public class OverlayerManager {
         instances.clear();
         OverlayerData data = OverlayerDataManager.load();
         instances.addAll(data.getImageInstances());
-        Config.setTitleScreenBtnXOffset(data.getTitleScreenBtnXOffset());
-        Config.setTitleScreenBtnYOffset(data.getTitleScreenBtnYOffset());
-        Config.setOptionsScreenBtnXOffset(data.getOptionsScreenBtnXOffset());
-        Config.setOptionsScreenBtnYOffset(data.getOptionsScreenBtnYOffset());
     }
 
     public void save() {
         OverlayerData data = new OverlayerData();
         data.setImageInstances(new ArrayList<>(instances));
-        data.setTitleScreenBtnXOffset(Config.getTitleScreenBtnXOffset());
-        data.setTitleScreenBtnYOffset(Config.getTitleScreenBtnYOffset());
-        data.setOptionsScreenBtnXOffset(Config.getOptionsScreenBtnXOffset());
-        data.setOptionsScreenBtnYOffset(Config.getOptionsScreenBtnYOffset());
         OverlayerDataManager.save(data);
     }
 
     public void addInstance(ImageEntry entry) {
         instances.add(entry);
+        OverlayRenderer.invalidateSortCache();
         save();
     }
 
     public void removeInstance(ImageEntry entry) {
         instances.remove(entry);
+        OverlayRenderer.invalidateSortCache();
         save();
     }
 
     public void updateInstance(ImageEntry entry) {
+        OverlayRenderer.invalidateSortCache();
         save();
     }
 }

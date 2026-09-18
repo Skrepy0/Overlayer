@@ -11,10 +11,10 @@
     "requireAnnotations": true
   },
   "client": [
-    "HandledScreenMixin",
-    "InGameHudMixin",
+    "AbstractContainerScreenMixin",
+    "GuiMixin",
     "OptionsScreenMixin",
-    "ScreenMixin",
-    "TitleScreenMixin"
+    "TitleScreenMixin",
+    "accessor.ScreenAccessor"
   ]
 }
