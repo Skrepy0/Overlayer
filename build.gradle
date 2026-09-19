@@ -118,7 +118,7 @@ configurations {
 }
 
 dependencies {
-    implementation platform("org.lwjgl:lwjgl-bom:3.4.1")
+    implementation platform("org.lwjgl:lwjgl-bom:3.4.3")
 
     implementation "org.lwjgl:lwjgl-glfw"
     implementation "org.lwjgl:lwjgl-tinyfd"
@@ -201,8 +201,8 @@ spotless {
 
 jar {
     from {
-         configurations.runtimeClasspath
-                .findAll { it.name.startsWith('icafe') }   // 根据文件名筛选
+        configurations.runtimeClasspath
+                .findAll { it.name.startsWith('icafe') || it.name.startsWith('lwjgl-tinyfd') }   // 根据文件名筛选
                 .collect { it.isDirectory() ? it : zipTree(it) }
     }
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
