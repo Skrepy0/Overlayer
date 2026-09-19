@@ -21,7 +21,7 @@ import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 public class OverlayerClient {
     private static final KeyMapping.Category CATEGORY = new KeyMapping.Category(Identifier.fromNamespaceAndPath("overlayer", "general"));
     public static final KeyMapping TOGGLE_OVERLAY = new KeyMapping(
-            "key.overlayer.toggle_show_status", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F1, CATEGORY
+            "key.overlayer.toggle_show_status", InputConstants.Type.KEYBOARD, GLFW.GLFW_KEY_F1, CATEGORY
     );
     public static boolean overlayVisible = true;
 

@@ -1,7 +1,7 @@
 plugins {
     id 'java-library'
     id 'maven-publish'
-    id 'net.neoforged.moddev' version '2.0.141'
+    id 'net.neoforged.moddev' version '2.0.147'
     id 'idea'
     id 'com.diffplug.spotless' version '6.25.0'
 }
@@ -118,9 +118,20 @@ configurations {
 }
 
 dependencies {
+    implementation platform("org.lwjgl:lwjgl-bom:3.4.1")
+
+    implementation "org.lwjgl:lwjgl-glfw"
+    implementation "org.lwjgl:lwjgl-tinyfd"
     implementation('com.github.dragon66:icafe:icafe4j-v0.2') {
         exclude group: 'javax.media', module: 'jai_imageio'
     }
+    def lwjglNatives = org.gradle.internal.os.OperatingSystem.current().isWindows() ? "natives-windows" :
+            org.gradle.internal.os.OperatingSystem.current().isMacOsX() ? "natives-macos" :
+                    "natives-linux"
+
+    runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-glfw::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-tinyfd::$lwjglNatives"
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.

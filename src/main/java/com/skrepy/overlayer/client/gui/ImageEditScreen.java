@@ -21,6 +21,7 @@ import org.lwjgl.system.MemoryStack;
 import com.skrepy.overlayer.client.gui.components.ScrollablePanel;
 import com.skrepy.overlayer.data.ImageEntry;
 import com.skrepy.overlayer.manager.OverlayerManager;
+import com.skrepy.overlayer.render.OverlayRenderer;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -206,7 +207,17 @@ public class ImageEditScreen extends Screen {
         // 4) 图层输入框
         this.layerInput = new EditBox(this.font, 0, offsetY, panelWidth, 20, Component.literal("图层"));
         this.layerInput.setValue(String.valueOf(entry.getLayer()));
-        this.layerInput.setFilter(s -> s.matches("\\d*"));
+        this.layerInput.setResponder(s -> {
+            if (!s.matches("\\d*")) {
+                // 剔除所有非数字字符
+                String filtered = s.replaceAll("\\D", "");
+                // 避免 EditBox 内部状态错乱，先关掉 responder 再改值
+                this.layerInput.setResponder(null);
+                this.layerInput.setValue(filtered);
+                // 重新装上 responder，继续监听后续输入
+                this.layerInput.setResponder(this::applyLayerFilter);
+            }
+        });
         this.layerInput.setMaxLength(6);
         this.scrollPanel.addWidget(this.layerInput);
         offsetY += 20 + spacing;
@@ -226,6 +237,14 @@ public class ImageEditScreen extends Screen {
         this.addRenderableWidget(this.doneButton);
 
         loadPreviewDimension(entry.getAbsolutePath().toString());
+    }
+
+    private void applyLayerFilter(String s) {
+        if (s.matches("\\d*")) return;
+        String filtered = s.replaceAll("\\D", "");
+        this.layerInput.setResponder(null);   // 临时断开，防止递归
+        this.layerInput.setValue(filtered);
+        this.layerInput.setResponder(this::applyLayerFilter);
     }
 
     @Override
@@ -345,6 +364,7 @@ public class ImageEditScreen extends Screen {
         entry.setDisplayMode(MODE_VALUES[modeIndex]);
 
         OverlayerManager.getInstance().save();
+        OverlayRenderer.invalidateSortCache();
         onSave.accept(entry);
 
         this.minecraft.setScreenAndShow(lastScreen);

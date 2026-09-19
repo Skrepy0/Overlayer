@@ -100,7 +100,7 @@ public class ScrollablePanel extends AbstractWidget implements ContainerEventHan
         }
     }
 
-    // ---- 鼠标事件（直接传递屏幕坐标） ----
+    // ---- 鼠标事件 ----
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         if (!isMouseOver(event.x(), event.y())) return false;
@@ -108,9 +108,6 @@ public class ScrollablePanel extends AbstractWidget implements ContainerEventHan
             if (entry.widget.isMouseOver(event.x(), event.y())) {
                 if (entry.widget.mouseClicked(event, doubleClick)) {
                     this.setFocused(entry.widget);
-                    if (event.button() == 0) {
-                        this.dragging = true;
-                    }
                     return true;
                 }
             }
@@ -119,20 +116,19 @@ public class ScrollablePanel extends AbstractWidget implements ContainerEventHan
     }
 
     @Override
-    public boolean mouseReleased(MouseButtonEvent event) {
-        if (event.button() == 0 && this.dragging) {
-            this.dragging = false;
-            if (this.focusedChild != null) {
-                return this.focusedChild.mouseReleased(event);
-            }
+    public boolean mouseReleased(@NotNull MouseButtonEvent event) {
+        if (this.focusedChild != null) {
+            return this.focusedChild.mouseReleased(event);
         }
         return false;
     }
 
     @Override
     public boolean mouseDragged(@NotNull MouseButtonEvent event, double dx, double dy) {
-        if (this.dragging && this.focusedChild != null) {
-            return this.focusedChild.mouseDragged(event, dx, dy);
+        // 直接转发，不做 this.dragging 判断
+        GuiEventListener focused = this.focusedChild;
+        if (focused != null) {
+            return focused.mouseDragged(event, dx, dy);
         }
         return false;
     }

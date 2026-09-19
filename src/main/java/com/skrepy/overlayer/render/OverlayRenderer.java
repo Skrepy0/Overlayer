@@ -44,7 +44,7 @@ public class OverlayRenderer {
 
         boolean inGame = mc.player != null && mc.level != null;
 
-        for (ImageEntry entry : instances) {
+        for (ImageEntry entry : sortedCache) {
             String mode = entry.getDisplayMode();
             if ("disabled".equals(mode)) continue;
             if ("ingame".equals(mode) && !inGame) continue;
