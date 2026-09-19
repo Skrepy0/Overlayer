@@ -86,6 +86,7 @@ public class OverlayerManager {
         data.setOptionsScreenBtnXOffset(Config.getOptionsScreenBtnXOffset());
         data.setOptionsScreenBtnYOffset(Config.getOptionsScreenBtnYOffset());
         OverlayerDataManager.save(data);
+        OverlayRenderer.invalidateSortCache();
     }
 
     public void addInstance(ImageEntry entry) {
