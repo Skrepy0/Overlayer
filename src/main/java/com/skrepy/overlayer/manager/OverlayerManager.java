@@ -77,6 +77,7 @@ public class OverlayerManager {
         OverlayerData data = new OverlayerData();
         data.setImageInstances(new ArrayList<>(instances));
         OverlayerDataManager.save(data);
+        OverlayRenderer.invalidateSortCache();
     }
 
     public void addInstance(ImageEntry entry) {
