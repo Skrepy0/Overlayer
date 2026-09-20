@@ -4,15 +4,16 @@ import static com.skrepy.overlayer.manager.OverlayerManager.getFileExtension;
 import static com.skrepy.overlayer.manager.OverlayerManager.selectFile;
 
 import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import javax.imageio.ImageIO;
+import javax.imageio.stream.ImageInputStream;
 
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.system.MemoryStack;
@@ -46,6 +47,7 @@ public class ImageEditScreen extends Screen {
     private final ImageEntry entry;
     private final Consumer<ImageEntry> onSave;
     private final DecimalFormat df = new DecimalFormat("0.00");
+    private final AtomicBoolean previewLoading = new AtomicBoolean(false);
     ScrollablePanel scrollPanel;
     // 控件
     private TextFieldWidget pathInput;
@@ -355,7 +357,7 @@ public class ImageEditScreen extends Screen {
             previewFileExists = false;
             return;
         }
-        if (path.equals(currentPreviewPath) && !previewFileExists) {
+        if (path.equals(currentPreviewPath)) {
             return;
         }
         Path filePath = Paths.get(path);
@@ -366,23 +368,41 @@ public class ImageEditScreen extends Screen {
             Overlayer.LOGGER.debug("预览文件不存在或不可读: {}", path);
             return;
         }
-        try (InputStream is = Files.newInputStream(filePath)) {
-            BufferedImage img = ImageIO.read(is);
-            if (img != null) {
-                currentPreviewDimension = new Dimension(img.getWidth(), img.getHeight());
+        // 避免重复加载
+        if (!previewLoading.compareAndSet(false, true)) {
+            return;
+        }
+        // 异步读取图片尺寸（仅读取头部元数据）
+        CompletableFuture.runAsync(() -> {
+            try (ImageInputStream iis = ImageIO.createImageInputStream(Files.newInputStream(filePath))) {
+                if (iis == null) {
+                    return;
+                }
+                java.util.Iterator<javax.imageio.ImageReader> readers = ImageIO.getImageReaders(iis);
+                if (readers.hasNext()) {
+                    javax.imageio.ImageReader reader = readers.next();
+                    try {
+                        reader.setInput(iis, true, true);
+                        int w = reader.getWidth(0);
+                        int h = reader.getHeight(0);
+                        if (w > 0 && h > 0) {
+                            currentPreviewDimension = new Dimension(w, h);
+                            currentPreviewPath = path;
+                            previewFileExists = true;
+                        }
+                    } finally {
+                        reader.dispose();
+                    }
+                }
+            } catch (Exception e) {
                 currentPreviewPath = path;
-                previewFileExists = true;
-                Overlayer.LOGGER.debug("成功加载预览图片尺寸: {} x {}", img.getWidth(), img.getHeight());
-            } else {
+
                 currentPreviewDimension = null;
                 previewFileExists = false;
-                Overlayer.LOGGER.warn("无法解码图片文件: {}", path);
+            } finally {
+                previewLoading.set(false);
             }
-        } catch (Exception e) {
-            currentPreviewDimension = null;
-            previewFileExists = false;
-            Overlayer.LOGGER.debug("加载预览图片尺寸失败: {}", path, e);
-        }
+        });
     }
 
     // ========== 自定义滑块内部类 ==========
@@ -463,6 +483,8 @@ public class ImageEditScreen extends Screen {
     }
 
     private class ScaleSlider extends AbstractCustomSlider {
+        private double lastVal = Double.MIN_VALUE;
+
         public ScaleSlider(int x, int y, int width, int height, Text prefix, Text suffix, int min, int max, int currentValue) {
             super(x, y, width, height, prefix, suffix, min, max, currentValue);
             this.value = (currentValue - min) / (double) (max - min);
@@ -476,12 +498,18 @@ public class ImageEditScreen extends Screen {
 
         @Override
         protected void updateMessage() {
+
             double val = getValue() / 100.0;
-            setMessage(Text.translatable("overlayer.screen.image_edit.slide.zoom").append(df.format(val) + "x"));
+            if (Math.abs(val - lastVal) > 0.001) {
+                lastVal = val;
+                setMessage(Text.translatable("overlayer.screen.image_edit.slide.zoom").append(df.format(val) + "x"));
+            }
         }
     }
 
     private class AlphaSlider extends AbstractCustomSlider {
+        private double lastVal = Double.MIN_VALUE;
+
         public AlphaSlider(int x, int y, int width, int height, Text prefix, Text suffix, int min, int max, int currentValue) {
             super(x, y, width, height, prefix, suffix, min, max, currentValue);
             this.value = (currentValue - min) / (double) (max - min);
@@ -496,7 +524,10 @@ public class ImageEditScreen extends Screen {
         @Override
         protected void updateMessage() {
             double val = getValue() / 100.0;
-            setMessage(Text.translatable("overlayer.screen.image_edit.slide.alpha").append(df.format(val)));
+            if (Math.abs(val - lastVal) > 0.001) {
+                lastVal = val;
+                setMessage(Text.translatable("overlayer.screen.image_edit.slide.alpha").append(df.format(val)));
+            }
         }
     }
 }

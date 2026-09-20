@@ -15,6 +15,7 @@ import com.skrepy.overlayer.Overlayer;
 import com.skrepy.overlayer.data.ImageEntry;
 import com.skrepy.overlayer.data.OverlayerData;
 import com.skrepy.overlayer.data.OverlayerDataManager;
+import com.skrepy.overlayer.render.OverlayRenderer;
 
 import net.minecraft.text.Text;
 
@@ -85,6 +86,7 @@ public class OverlayerManager {
         data.setOptionsScreenBtnXOffset(Config.getOptionsScreenBtnXOffset());
         data.setOptionsScreenBtnYOffset(Config.getOptionsScreenBtnYOffset());
         OverlayerDataManager.save(data);
+        OverlayRenderer.invalidateSortCache();
     }
 
     public void addInstance(ImageEntry entry) {

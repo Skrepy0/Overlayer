@@ -51,7 +51,7 @@ public class GifLoader {
     private volatile boolean gifLoading = false;
     // 播放辅助
     private long gifStartTime = 0;
-    private int lastFrameIndex = -1;
+    private int[] cumulativeDelays;
 
     public GifLoader(int id, String path, Path absolutePath) {
         this.id = id;
@@ -71,10 +71,14 @@ public class GifLoader {
         return loc;
     }
 
+    public static void shutdownExecutor() {
+        DECODER_EXECUTOR.shutdownNow();
+    }
+
     /**
      * 异步加载 GIF，解码在后台线程，纹理注册在主线程
      */
-    public synchronized void loadAsync(TextureManager textureManager) {
+    public void loadAsync(TextureManager textureManager) {
         if (gifLoading || gifLoaded) return;
         if (absolutePath == null) {
             LOGGER.error("absolutePath is null, cannot load: id={}", id);
@@ -123,12 +127,38 @@ public class GifLoader {
             gifLoaded = true;
             gifLoading = false;
             gifStartTime = System.currentTimeMillis();
+            buildCumulativeDelays();
             LOGGER.info("GIF loaded async: id={}, frames={}, totalDelay={}ms", id, textures.size(), totalDelay);
         }, MinecraftClient.getInstance()).exceptionally(e -> {
             LOGGER.error("Async GIF load failed: id={}", id, e);
             gifLoading = false;
             return null;
         });
+    }
+
+    private void buildCumulativeDelays() {
+        if (gifDelays == null) return;
+        cumulativeDelays = new int[gifDelays.size()];
+        int sum = 0;
+        for (int i = 0; i < gifDelays.size(); i++) {
+            sum += gifDelays.get(i);
+            cumulativeDelays[i] = sum;
+        }
+        gifDelays = null; // Free memory
+    }
+
+    private int binarySearchFrame(int cycleTime) {
+        int low = 0;
+        int high = cumulativeDelays.length - 1;
+        while (low < high) {
+            int mid = (low + high) >>> 1;
+            if (cumulativeDelays[mid] <= cycleTime) {
+                low = mid + 1;
+            } else {
+                high = mid;
+            }
+        }
+        return low;
     }
 
     /**
@@ -207,7 +237,7 @@ public class GifLoader {
     }
 
     @Nullable
-    public synchronized Identifier getCurrentFrame() {
+    public Identifier getCurrentFrame() {
         if (!gifLoaded) return null;
         if (gifTextures == null || gifTextures.isEmpty()) return null;
         if (gifTotalDelay == 0) return gifTextures.getFirst();
@@ -215,27 +245,25 @@ public class GifLoader {
         long currentTime = System.currentTimeMillis();
         long elapsed = currentTime - gifStartTime;
         int cycleTime = (int) (elapsed % gifTotalDelay);
-        int accum = 0;
-        int selectedIndex = 0;
-        for (int i = 0; i < gifDelays.size(); i++) {
-            accum += gifDelays.get(i);
-            if (cycleTime < accum) {
-                selectedIndex = i;
-                break;
-            }
-        }
-        lastFrameIndex = selectedIndex;
+        int selectedIndex = binarySearchFrame(cycleTime);
         return gifTextures.get(selectedIndex);
     }
 
-    public void clearCache() {
+    public void clearCache(TextureManager textureManager) {
         LOGGER.debug("Clearing GIF cache: id={}", id);
-        gifTextures = null;
+        if (gifTextures != null) {
+            for (Identifier loc : gifTextures) {
+                if (loc != null) {
+                    textureManager.destroyTexture(loc);
+                }
+            }
+            gifTextures = null;
+        }
         gifDelays = null;
+        cumulativeDelays = null;
         gifLoaded = false;
         gifLoading = false;
         gifStartTime = 0;
-        lastFrameIndex = -1;
     }
 
     public boolean isLoaded() {
@@ -252,10 +280,6 @@ public class GifLoader {
 
     public int getOriginalHeight() {
         return originalHeight;
-    }
-
-    public void resetStartTime() {
-        this.gifStartTime = System.currentTimeMillis();
     }
 
     private static class FrameData {
