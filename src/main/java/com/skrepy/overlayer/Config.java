@@ -1,5 +1,7 @@
 package com.skrepy.overlayer;
 
+import com.skrepy.overlayer.data.OverlayerData;
+
 public class Config {
     private static boolean isOpenContainerScreen;
     private static int titleScreenBtnXOffset;
@@ -8,6 +10,21 @@ public class Config {
     private static int optionsScreenBtnYOffset;
 
     private Config() {
+    }
+
+    public static void init(OverlayerData data) {
+        titleScreenBtnXOffset = data.getTitleScreenBtnXOffset();
+        titleScreenBtnYOffset = data.getTitleScreenBtnYOffset();
+        optionsScreenBtnXOffset = data.getOptionsScreenBtnXOffset();
+        optionsScreenBtnYOffset = data.getOptionsScreenBtnYOffset();
+    }
+
+    public static OverlayerData writeData(OverlayerData data) {
+        data.setTitleScreenBtnXOffset(titleScreenBtnXOffset);
+        data.setTitleScreenBtnYOffset(titleScreenBtnYOffset);
+        data.setOptionsScreenBtnXOffset(optionsScreenBtnXOffset);
+        data.setOptionsScreenBtnYOffset(optionsScreenBtnYOffset);
+        return data;
     }
 
     public static int getOptionsScreenBtnYOffset() {
