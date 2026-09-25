@@ -10,6 +10,7 @@ import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
+import com.skrepy.overlayer.Config;
 import com.skrepy.overlayer.Overlayer;
 import com.skrepy.overlayer.data.ImageEntry;
 import com.skrepy.overlayer.data.OverlayerData;
@@ -70,13 +71,14 @@ public class OverlayerManager {
     public void load() {
         instances.clear();
         OverlayerData data = OverlayerDataManager.load();
+        Config.init(data);
         instances.addAll(data.getImageInstances());
     }
 
     public void save() {
         OverlayerData data = new OverlayerData();
         data.setImageInstances(new ArrayList<>(instances));
-        OverlayerDataManager.save(data);
+        OverlayerDataManager.save(Config.writeData(data));
         OverlayRenderer.invalidateSortCache();
     }
 
