@@ -42,12 +42,12 @@ public abstract class OptionsScreenMixin extends Screen {
         }
 
         overlayer$customButton = Button.builder(
-                Component.literal("O"), (btn) -> {
+                Component.literal("O"), (_) -> {
                     boolean shiftDown = InputConstants.isKeyDown(
                             Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT
                     );
                     if (shiftDown) {
-                        Minecraft.getInstance().gui.setScreen(new ConfigScreen());
+                        Minecraft.getInstance().gui.setScreen(new ConfigScreen(screen));
                     } else {
                         Minecraft.getInstance().gui.setScreen(new OverlayerSettingsScreen(screen));
                     }

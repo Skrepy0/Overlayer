@@ -1,12 +1,15 @@
 package com.skrepy.overlayer.mixin;
 
+import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.skrepy.overlayer.Config;
+import com.skrepy.overlayer.client.gui.ConfigScreen;
 import com.skrepy.overlayer.client.gui.OverlayerSettingsScreen;
 
 import net.fabricmc.api.EnvType;
@@ -53,7 +56,16 @@ public abstract class TitleScreenMixin extends Screen {
         }
 
         overlayer$customButton = Button.builder(
-                Component.literal("O"), (_) -> Minecraft.getInstance().gui.setScreen(new OverlayerSettingsScreen(screen))
+                Component.literal("O"), (_) -> {
+                    boolean shiftDown = InputConstants.isKeyDown(
+                            Minecraft.getInstance().getWindow(), GLFW.GLFW_KEY_LEFT_SHIFT
+                    );
+                    if (shiftDown) {
+                        Minecraft.getInstance().gui.setScreen(new ConfigScreen(screen));
+                    } else {
+                        Minecraft.getInstance().gui.setScreen(new OverlayerSettingsScreen(screen));
+                    }
+                }
         ).bounds(0, 0, 20, 20).tooltip(Tooltip.create(Component.translatable("overlayer.screen.button.config.tooltip"))).build();
 
         // 相对辅助功能按钮定位，并叠加配置偏移
