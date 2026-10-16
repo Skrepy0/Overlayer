@@ -3,23 +3,29 @@
   "id": "overlayer",
   "version": "${version}",
   "name": "Overlayer",
-  "description": "This is an example description! Tell everyone what your mod is about!",
+  "description": "Overlay custom images anywhere on your game screen, with full control over position, scale, opacity, and layer order.",
   "authors": [
-    "Me!"
+    "Skrepy2233"
   ],
   "contact": {
-    "homepage": "https://fabricmc.net/",
-    "sources": "https://github.com/FabricMC/fabric-example-mod"
+    "homepage": "https://github.com/Skrepy0/Overlayer",
+    "sources": "https://github.com/Skrepy0/Overlayer"
   },
-  "license": "CC0-1.0",
+  "license": "MIT",
   "icon": "assets/overlayer/icon.png",
   "environment": "*",
   "entrypoints": {
     "main": [
-      "com.skrepy.overlayer.fabric.ExampleModFabric"
+      "com.skrepy.overlayer.fabric.OverlayerFabric"
     ],
     "client": [
-      "com.skrepy.overlayer.fabric.client.ExampleModFabricClient"
+      "com.skrepy.overlayer.fabric.OverlayerClient"
+    ],
+    "fabric-datagen": [
+      "com.skrepy.overlayer.fabric.OverlayerDataGenerator"
+    ],
+    "modmenu": [
+      "com.skrepy.overlayer.fabric.config.ModMenuIntegration"
     ]
   },
   "mixins": [
@@ -32,6 +38,6 @@
     "fabric-api": "*"
   },
   "suggests": {
-    "another-mod": "*"
+    "modmenu": "*"
   }
 }

@@ -6,6 +6,7 @@ architectury {
     platformSetupLoomIde()
     fabric()
 }
+
 repositories {
     maven {
         name = 'NeoForged'
@@ -21,6 +22,7 @@ repositories {
         url = "https://maven.terraformersmc.com/"
     }
 }
+
 configurations {
     common {
         canBeResolved = true
@@ -30,37 +32,53 @@ configurations {
     runtimeClasspath.extendsFrom common
     developmentFabric.extendsFrom common
 
-    // Files in this configuration will be bundled into your mod using the Shadow plugin.
-    // Don't use the `shadow` configuration from the plugin itself as it's meant for excluding files.
     shadowBundle {
         canBeResolved = true
         canBeConsumed = false
     }
 }
 
+def os = org.gradle.internal.os.OperatingSystem.current()
+def lwjglNatives = os.isWindows() ? "natives-windows" :
+        os.isMacOsX() ? "natives-macos" :
+                "natives-linux"
+
 dependencies {
     implementation "net.fabricmc:fabric-loader:$rootProject.fabric_loader_version"
-
-    // Fabric API. This is technically optional, but you probably want it anyway.
     implementation "net.fabricmc.fabric-api:fabric-api:$rootProject.fabric_api_version"
-    implementation('com.github.dragon66:icafe:icafe4j-v0.2') {
-        exclude group: 'javax.media', module: 'jai_imageio'
-    }
+
+    implementation platform("org.lwjgl:lwjgl-bom:$rootProject.lwjgl_version")
+    implementation "org.lwjgl:lwjgl"
+    implementation "org.lwjgl:lwjgl-glfw"
+    implementation "org.lwjgl:lwjgl-tinyfd"
+
+    runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-glfw::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-tinyfd::$lwjglNatives"
+
     common(project(path: ':common')) { transitive = false }
     shadowBundle project(path: ':common', configuration: 'transformProductionFabric')
+
     implementation "com.terraformersmc:modmenu:${rootProject.modmenu_version}"
-    shadowBundle "com.github.dragon66:icafe:icafe4j-v0.2"
+
+    implementation("com.github.dragon66:icafe:icafe4j-v0.2") {
+        exclude group: 'javax.media', module: 'jai_imageio'
+        exclude group: 'org.slf4j'
+    }
+    shadowBundle("com.github.dragon66:icafe:icafe4j-v0.2") {
+        exclude group: 'javax.media', module: 'jai_imageio'
+        exclude group: 'org.slf4j'
+    }
 }
 
 processResources {
     inputs.property 'version', project.version
-
     filesMatching('fabric.mod.json') {
         expand version: inputs.properties.version
     }
 }
-def generatedResources = file("src/generated")
 
+def generatedResources = file("src/generated")
 sourceSets {
     main {
         resources.srcDir generatedResources
@@ -88,8 +106,6 @@ loom {
     }
 }
 
-// Minecraft is not obfuscated on this version, so there is no remapJar task.
-// The shaded jar is the mod jar that ships.
 jar {
     archiveClassifier = 'dev'
 }
@@ -97,6 +113,14 @@ jar {
 shadowJar {
     configurations = [project.configurations.shadowBundle]
     archiveClassifier = null
+    exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA'
+    exclude 'META-INF/INDEX.LIST'
+    exclude 'META-INF/native-image/**'
+    exclude 'META-INF/maven/**'
+
+    minimize {
+        exclude(dependency('com.github.dragon66:icafe:.*'))
+    }
 }
 
 assemble.dependsOn shadowJar
