@@ -1,5 +1,6 @@
 package com.skrepy.overlayer.neoforge.datagen;
 
+import com.skrepy.overlayer.CommonOverlayer;
 import com.skrepy.overlayer.neoforge.OverlayerNeoForge;
 import net.minecraft.data.PackOutput;
 import net.neoforged.neoforge.common.data.LanguageProvider;
@@ -7,7 +8,7 @@ import net.neoforged.neoforge.common.data.LanguageProvider;
 public class ZHCNLanProvider extends LanguageProvider {
 
     public ZHCNLanProvider(PackOutput output) {
-        super(output, OverlayerNeoForge.MOD_ID, "zh_cn");
+        super(output, CommonOverlayer.MOD_ID, "zh_cn");
     }
 
     @Override

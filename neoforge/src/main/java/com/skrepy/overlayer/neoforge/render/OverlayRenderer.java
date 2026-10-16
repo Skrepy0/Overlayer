@@ -1,8 +1,8 @@
 package com.skrepy.overlayer.neoforge.render;
 
+import com.skrepy.overlayer.CommonOverlayer;
 import com.skrepy.overlayer.data.ImageEntry;
 import com.skrepy.overlayer.manager.OverlayerManager;
-import com.skrepy.overlayer.neoforge.OverlayerNeoForge;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -51,7 +51,7 @@ public class OverlayRenderer {
 
             Identifier texture = entry.getCurrentFrame(textureManager, partialTick);
             if (texture == null) {
-                OverlayerNeoForge.LOGGER.warn("纹理加载失败: {}", entry.getPath());
+                CommonOverlayer.LOGGER.warn("纹理加载失败: {}", entry.getPath());
                 continue;
             }
 

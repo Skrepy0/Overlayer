@@ -19,7 +19,6 @@ public final class CommonOverlayer {
     public static Path GAME_DIR;
 
     private static void registerShutdownHook() {
-        GAME_DIR = getGameDir();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             StaticImageLoader.shutdownExecutor();
             GifLoader.shutdownExecutor();
@@ -28,6 +27,7 @@ public final class CommonOverlayer {
     }
 
     public static void init() {
+        GAME_DIR = getGameDir();
         LOGGER.info("GAME_DIR:{}", GAME_DIR);
         OverlayerManager.getInstance().load();
         registerShutdownHook();

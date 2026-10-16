@@ -1,6 +1,7 @@
 package com.skrepy.overlayer.fabric;
 
 import com.skrepy.overlayer.CommonOverlayer;
+
 import net.fabricmc.api.ModInitializer;
 
 public final class ExampleModFabric implements ModInitializer {

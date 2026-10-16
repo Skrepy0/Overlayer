@@ -1,6 +1,7 @@
 package com.skrepy.overlayer.neoforge;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import com.skrepy.overlayer.CommonOverlayer;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
@@ -14,8 +15,8 @@ import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import org.lwjgl.glfw.GLFW;
 
-@Mod(value = OverlayerNeoForge.MOD_ID, dist = Dist.CLIENT)
-@EventBusSubscriber(modid = OverlayerNeoForge.MOD_ID, value = Dist.CLIENT)
+@Mod(value = CommonOverlayer.MOD_ID, dist = Dist.CLIENT)
+@EventBusSubscriber(modid = CommonOverlayer.MOD_ID, value = Dist.CLIENT)
 public class OverlayerClient {
     private static final KeyMapping.Category CATEGORY = new KeyMapping.Category(Identifier.fromNamespaceAndPath("overlayer", "general"));
     public static final KeyMapping TOGGLE_OVERLAY = new KeyMapping(

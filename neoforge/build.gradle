@@ -16,8 +16,6 @@ configurations {
     runtimeClasspath.extendsFrom common
     developmentNeoForge.extendsFrom common
 
-    // Files in this configuration will be bundled into your mod using the Shadow plugin.
-    // Don't use the `shadow` configuration from the plugin itself as it's meant for excluding files.
     shadowBundle {
         canBeResolved = true
         canBeConsumed = false
@@ -36,27 +34,31 @@ repositories {
     }
 }
 
+def os = org.gradle.internal.os.OperatingSystem.current()
+def lwjglNatives = os.isWindows() ? "natives-windows" :
+        os.isMacOsX() ? "natives-macos" :
+                "natives-linux"
+
 dependencies {
     neoForge "net.neoforged:neoforge:$rootProject.neoforge_version"
-    implementation('com.github.dragon66:icafe:icafe4j-v0.2') {
-        exclude group: 'javax.media', module: 'jai_imageio'
-    }
-    implementation platform("org.lwjgl:lwjgl-bom:3.4.3")
 
-    implementation "org.lwjgl:lwjgl-glfw"
+    // 编译期依赖
+    implementation platform("org.lwjgl:lwjgl-bom:$rootProject.lwjgl_version")
+    implementation "org.lwjgl:lwjgl"
     implementation "org.lwjgl:lwjgl-tinyfd"
-    implementation('com.github.dragon66:icafe:icafe4j-v0.2') {
-        exclude group: 'javax.media', module: 'jai_imageio'
-    }
-    def lwjglNatives = org.gradle.internal.os.OperatingSystem.current().isWindows() ? "natives-windows" :
-            org.gradle.internal.os.OperatingSystem.current().isMacOsX() ? "natives-macos" :
-                    "natives-linux"
-    runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-glfw::$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-tinyfd::$lwjglNatives"
+
+    include "org.lwjgl:lwjgl:$rootProject.lwjgl_version"
+    include "org.lwjgl:lwjgl:$rootProject.lwjgl_version:$lwjglNatives"
+    include "org.lwjgl:lwjgl-tinyfd:$rootProject.lwjgl_version"
+    include "org.lwjgl:lwjgl-tinyfd:$rootProject.lwjgl_version:$lwjglNatives"
+
     common(project(path: ':common')) { transitive = false }
     shadowBundle project(path: ':common', configuration: 'transformProductionNeoForge')
-    shadowBundle "com.github.dragon66:icafe:icafe4j-v0.2"
+
+    shadowBundle("com.github.dragon66:icafe:icafe4j-v0.2") {
+        exclude group: 'javax.media', module: 'jai_imageio'
+        exclude group: 'org.slf4j'
+    }
 }
 
 processResources {
@@ -67,8 +69,6 @@ processResources {
     }
 }
 
-// Minecraft is not obfuscated on this version, so there is no remapJar task.
-// The shaded jar is the mod jar that ships.
 jar {
     archiveClassifier = 'dev'
 }
@@ -76,6 +76,15 @@ jar {
 shadowJar {
     configurations = [project.configurations.shadowBundle]
     archiveClassifier = null
+
+    exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA'
+    exclude 'META-INF/INDEX.LIST'
+    exclude 'META-INF/native-image/**'
+    exclude 'META-INF/maven/**'
+
+    minimize {
+        exclude(dependency('com.github.dragon66:icafe:.*'))
+    }
 }
 
 assemble.dependsOn shadowJar
@@ -91,14 +100,6 @@ configurations {
     }
 }
 
-def generatedResources = file("src/generated")
-
-sourceSets {
-    main {
-        resources.srcDir generatedResources
-    }
-}
-
 loom {
     runs {
         clientData {
@@ -107,7 +108,7 @@ loom {
             programArg "--mod"
             programArg "overlayer"
             programArg "--output"
-            programArg file("src/generated").absolutePath
+            programArg file("src/generated/resources").absolutePath
         }
         serverData {
             serverData()
@@ -115,7 +116,17 @@ loom {
             programArg "--mod"
             programArg "overlayer"
             programArg "--output"
-            programArg file("src/generated").absolutePath
+            programArg file("src/generated/resources").absolutePath
+        }
+    }
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDir('src/generated/resources')
+            exclude("**/*.bbmodel")
+            exclude("**/.cache/**")
         }
     }
 }

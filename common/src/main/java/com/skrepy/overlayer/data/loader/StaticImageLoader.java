@@ -58,7 +58,7 @@ public class StaticImageLoader {
      * - 若正在加载或已失败，返回 null。
      * - 若未开始加载，则启动异步加载，返回 null。
      */
-    
+
     public Identifier getOrLoad(TextureManager textureManager) {
         if (loaded && texture != null) {
             return texture;
@@ -116,7 +116,7 @@ public class StaticImageLoader {
     /**
      * 后台解码，返回 NativeImage 和尺寸。
      */
-    
+
     private ImageData decodeImage() {
         try {
             File file = absolutePath.toFile();

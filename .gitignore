@@ -2,11 +2,11 @@
 .gradle/*
 build/*
 common/build/*
+common/.gradle/*
 fabric/.gradle/*
 fabric/build/*
 fabric/run/*
-fabric/src/generated/.cache/*
 neoforge/.gradle/*
 neoforge/build/*
 neoforge/run/*
-neoforge/src/generated/.cache/*
+**/.cache/**

@@ -1,8 +1,8 @@
 package com.skrepy.overlayer.neoforge.client.gui;
 
+import com.skrepy.overlayer.CommonOverlayer;
 import com.skrepy.overlayer.data.ImageEntry;
 import com.skrepy.overlayer.manager.OverlayerManager;
-import com.skrepy.overlayer.neoforge.OverlayerNeoForge;
 import com.skrepy.overlayer.neoforge.client.gui.components.ImageList;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -19,7 +19,6 @@ import org.lwjgl.system.MemoryStack;
 import java.util.List;
 
 import static com.skrepy.overlayer.manager.OverlayerManager.*;
-import static com.skrepy.overlayer.neoforge.OverlayerNeoForge.validFormat;
 
 public class OverlayerSettingsScreen extends Screen {
     private static final Component TITLE = Component.translatable("overlayer.screen.settings_page.title");
@@ -142,7 +141,7 @@ public class OverlayerSettingsScreen extends Screen {
         this.list.setX(10);
         this.list.refresh();
 
-        OverlayerNeoForge.LOGGER.debug("List reposition: size={}x{}, y={}, x={}", listWidth, listHeight, listTop, 10);
+        CommonOverlayer.LOGGER.debug("List reposition: size={}x{}, y={}, x={}", listWidth, listHeight, listTop, 10);
     }
 
     @Override
@@ -182,7 +181,7 @@ public class OverlayerSettingsScreen extends Screen {
             );
             return;
         }
-        if (!validFormat.contains(extension)) {
+        if (!CommonOverlayer.validFormat.contains(extension)) {
             OverlayerToast.showWarning(
                     Component.translatable("overlayer.toast.warning.unsupported_format.title"), Component.translatable("overlayer.toast.warning.unsupported_format.meg", extension)
             );

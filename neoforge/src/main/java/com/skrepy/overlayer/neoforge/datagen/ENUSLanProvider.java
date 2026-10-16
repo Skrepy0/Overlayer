@@ -1,12 +1,12 @@
 package com.skrepy.overlayer.neoforge.datagen;
 
-import com.skrepy.overlayer.neoforge.OverlayerNeoForge;
+import com.skrepy.overlayer.CommonOverlayer;
 import net.minecraft.data.PackOutput;
 import net.neoforged.neoforge.common.data.LanguageProvider;
 
 public class ENUSLanProvider extends LanguageProvider {
     public ENUSLanProvider(PackOutput output) {
-        super(output, OverlayerNeoForge.MOD_ID, "en_us");
+        super(output, CommonOverlayer.MOD_ID, "en_us");
     }
 
     @Override

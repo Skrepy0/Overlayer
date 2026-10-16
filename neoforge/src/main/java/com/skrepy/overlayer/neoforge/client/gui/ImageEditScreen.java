@@ -1,5 +1,6 @@
 package com.skrepy.overlayer.neoforge.client.gui;
 
+import com.skrepy.overlayer.CommonOverlayer;
 import com.skrepy.overlayer.data.ImageEntry;
 import com.skrepy.overlayer.manager.OverlayerManager;
 import com.skrepy.overlayer.neoforge.client.gui.components.ScrollablePanel;
@@ -31,7 +32,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static com.skrepy.overlayer.manager.OverlayerManager.selectFile;
-import static com.skrepy.overlayer.neoforge.OverlayerNeoForge.validFormat;
 
 public class ImageEditScreen extends Screen {
     private static final Component TITLE = Component.translatable("overlayer.screen.image_edit.title");
@@ -330,7 +330,7 @@ public class ImageEditScreen extends Screen {
             OverlayerToast.showWarning(Component.translatable("overlayer.toast.warning.invalid_path.title"), Component.translatable("overlayer.toast.warning.invalid_path.meg.no_extension"));
             return;
         }
-        if (!validFormat.contains(extension)) {
+        if (!CommonOverlayer.validFormat.contains(extension)) {
             OverlayerToast.showWarning(Component.translatable("overlayer.toast.warning.unsupported_format.title"), Component.translatable("overlayer.toast.warning.unsupported_format.meg", extension));
             return;
         }
