@@ -48,16 +48,27 @@ dependencies {
     implementation "net.fabricmc.fabric-api:fabric-api:$rootProject.fabric_api_version"
 
     implementation platform("org.lwjgl:lwjgl-bom:$rootProject.lwjgl_version")
+
     implementation "org.lwjgl:lwjgl"
     implementation "org.lwjgl:lwjgl-glfw"
     implementation "org.lwjgl:lwjgl-tinyfd"
 
-    runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-glfw::$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-tinyfd::$lwjglNatives"
+    shadowBundle "org.lwjgl:lwjgl:$rootProject.lwjgl_version"
+    shadowBundle "org.lwjgl:lwjgl-glfw:$rootProject.lwjgl_version"
+    shadowBundle "org.lwjgl:lwjgl-tinyfd:$rootProject.lwjgl_version"
 
-    common(project(path: ':common')) { transitive = false }
-    shadowBundle project(path: ':common', configuration: 'transformProductionFabric')
+    runtimeOnly "org.lwjgl:lwjgl:$rootProject.lwjgl_version:$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-glfw:$rootProject.lwjgl_version:$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-tinyfd:$rootProject.lwjgl_version:$lwjglNatives"
+
+    common(project(path: ':common')) {
+        transitive = false
+    }
+
+    shadowBundle project(
+            path: ':common',
+            configuration: 'transformProductionFabric'
+    )
 
     implementation "com.terraformersmc:modmenu:${rootProject.modmenu_version}"
 
@@ -65,6 +76,7 @@ dependencies {
         exclude group: 'javax.media', module: 'jai_imageio'
         exclude group: 'org.slf4j'
     }
+
     shadowBundle("com.github.dragon66:icafe:icafe4j-v0.2") {
         exclude group: 'javax.media', module: 'jai_imageio'
         exclude group: 'org.slf4j'
@@ -78,10 +90,13 @@ processResources {
     }
 }
 
-def generatedResources = file("src/generated")
 sourceSets {
     main {
-        resources.srcDir generatedResources
+        resources {
+            srcDir('src/generated')
+            exclude("**/*.bbmodel")
+            exclude("**/.cache/**")
+        }
     }
 }
 

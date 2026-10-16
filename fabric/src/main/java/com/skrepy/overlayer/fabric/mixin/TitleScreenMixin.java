@@ -65,7 +65,7 @@ public abstract class TitleScreenMixin extends Screen {
 
         // 相对辅助功能按钮定位，并叠加配置偏移
         overlayer$customButton.setX(
-                accessibilityButton.getX() + accessibilityButton.getWidth() + 82 + Config.getTitleScreenBtnXOffset());
+                accessibilityButton.getX() + accessibilityButton.getWidth() + 72 + Config.getTitleScreenBtnXOffset());
         overlayer$customButton.setY(
                 accessibilityButton.getY() + Config.getTitleScreenBtnYOffset() + 24);
 
