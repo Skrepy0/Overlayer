@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "overlayer",
+  "version": "${version}",
+  "name": "Overlayer",
+  "description": "This is an example description! Tell everyone what your mod is about!",
+  "authors": [
+    "Me!"
+  ],
+  "contact": {
+    "homepage": "https://fabricmc.net/",
+    "sources": "https://github.com/FabricMC/fabric-example-mod"
+  },
+  "license": "CC0-1.0",
+  "icon": "assets/overlayer/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.skrepy.overlayer.fabric.ExampleModFabric"
+    ],
+    "client": [
+      "com.skrepy.overlayer.fabric.client.ExampleModFabricClient"
+    ]
+  },
+  "mixins": [
+    "overlayer.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.20.0",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+}

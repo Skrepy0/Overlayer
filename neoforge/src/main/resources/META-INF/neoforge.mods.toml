@@ -1,0 +1,32 @@
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "MIT"
+issueTrackerURL = "https://github.com/Skrepy0/Overlayer/issues"
+
+[[mods]]
+modId = "overlayer"
+version = "${version}"
+displayName = "Overlayer"
+displayURL = "https://github.com/Skrepy0/Overlayer"
+iconFile = "icon.png"
+authors = "Skrepy2233"
+description = '''
+Overlay custom images anywhere on your game screen, with full control over position, scale, opacity, and layer order.
+'''
+
+[[dependencies.overlayer]]
+modId = "neoforge"
+type = "required"
+versionRange = "[26.3.0,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.overlayer]]
+modId = "minecraft"
+type = "required"
+versionRange = "[26.3,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[mixins]]
+config = "overlayer.mixins.json"

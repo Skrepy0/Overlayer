@@ -1,40 +1,12 @@
-### Gradle ###
-.gradle
-build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/**/build/
-
-### IntelliJ IDEA ###
-.idea/
-*.iws
-*.iml
-*.ipr
-out/
-!**/src/**/out/
-
-.run/
-
-### Eclipse ###
-.apt_generated
-.classpath
-.eclipse/
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-bin/
-!**/src/**/bin/
-
-### VS Code ###
-.vscode/
-
-### Mac OS ###
-.DS_Store
-
-### Minecraft Modding ###
-run/
-!**/src/**/run/
-**/src/generated/**/.cache/
-repo/
-!**/src/**/repo/
+.idea/*
+.gradle/*
+build/*
+common/build/*
+fabric/.gradle/*
+fabric/build/*
+fabric/run/*
+fabric/src/generated/.cache/*
+neoforge/.gradle/*
+neoforge/build/*
+neoforge/run/*
+neoforge/src/generated/.cache/*
