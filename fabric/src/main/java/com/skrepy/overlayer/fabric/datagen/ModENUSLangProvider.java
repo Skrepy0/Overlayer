@@ -15,7 +15,7 @@ public class ModENUSLangProvider extends FabricLanguageProvider {
 
     @Override
     public void generateTranslations(HolderLookup.Provider provider, TranslationBuilder translationBuilder) {
-        translationBuilder.add("category.overlayer.general", "OverlayerFabric General Configuration");
+        translationBuilder.add("key.category.overlayer.general", "OverlayerFabric General Configuration");
         translationBuilder.add("key.overlayer.toggle_show_status", "Toggle Instance Display Status");
         translationBuilder.add("overlayer.configuration.title", "OverlayerFabric");
 
